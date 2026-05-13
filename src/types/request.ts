@@ -7,6 +7,9 @@ export type EmergencyCategory =
   | "FIRE"
   | "MEDICAL"
   | "LANDSLIDE"
+  | "EARTHQUAKE"
+  | "TRAFFIC"
+  | "COLLAPSE"
   | "OTHER";
 export type RequestPriority = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 export type RequestStatus = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";

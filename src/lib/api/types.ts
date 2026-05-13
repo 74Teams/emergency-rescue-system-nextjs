@@ -166,8 +166,8 @@ export interface RequestSummary {
   priority: PriorityLevel;
   status: RequestStatus;
   description: string;
-  location: RequestLocationSummary;
-  requestedBy: RequestOwnerSummary;
+  location: RequestLocationSummary | null;
+  requestedBy: RequestOwnerSummary | null;
   medias?: RequestMedia[];
   missions?: RequestMissionSummary[];
   createdAt?: string;

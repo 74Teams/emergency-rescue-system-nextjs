@@ -4,7 +4,19 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { authApi } from "./services";
 import { setStoredAuthSession } from "./storage";
-import type { LoginRequest } from "./types";
+import type { ApiRole, LoginRequest } from "./types";
+
+export function getRoleRedirectPath(roles: ApiRole[]) {
+  if (roles.includes("Dispatcher")) {
+    return "/dispatcher";
+  }
+
+  if (roles.includes("Rescuer") || roles.includes("RescuerLeader")) {
+    return "/member";
+  }
+
+  return "/";
+}
 
 export function useLogin() {
   const router = useRouter();
@@ -16,7 +28,8 @@ export function useLogin() {
     },
     onSuccess: (data) => {
       setStoredAuthSession(data);
-      router.push("/");
+
+      router.push(getRoleRedirectPath(data.user.roles));
     },
   });
 }

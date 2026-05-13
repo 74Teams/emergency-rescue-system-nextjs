@@ -20,6 +20,7 @@ export const apiQueryKeys = {
     detail: (teamId: string) => ["rescue-teams", teamId] as const,
     members: (teamId: string) => ["rescue-teams", teamId, "members"] as const,
     missions: (teamId: string) => ["rescue-teams", teamId, "missions"] as const,
+    memberDashboard: () => ["rescue-teams", "member-dashboard"] as const,
   },
   missions: {
     all: ["missions"] as const,

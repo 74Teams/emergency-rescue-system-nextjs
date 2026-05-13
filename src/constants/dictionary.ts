@@ -9,6 +9,10 @@ export const dictType: Record<string, string> = {
   FLOOD: "Ngập lụt",
   MEDICAL: "Y tế",
   LANDSLIDE: "Sạt lở",
+  EARTHQUAKE: "Động đất",
+  TRAFFIC: "Tai nạn GT",
+  COLLAPSE: "Sập công trình",
+  OTHER: "Khác",
 };
 
 export const dictStatus: Record<string, string> = {
@@ -17,4 +21,5 @@ export const dictStatus: Record<string, string> = {
   RESOLVED: "Đã giải quyết",
   ON_MISSION: "Đang làm nhiệm vụ",
   COMPLETED: "Hoàn thành",
+  CLOSED: "Đã đóng",
 };

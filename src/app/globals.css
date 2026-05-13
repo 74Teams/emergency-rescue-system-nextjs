@@ -117,6 +117,47 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Dispatcher sidebar – dark navy override */
+.dispatcher-sidebar [data-slot="sidebar-inner"] {
+  --sidebar: hsl(216 50% 10%);
+  --sidebar-foreground: hsl(210 40% 96%);
+  --sidebar-primary: hsl(217 91% 60%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(217 60% 22%);
+  --sidebar-accent-foreground: hsl(0 0% 100%);
+  --sidebar-border: hsl(217 40% 18%);
+  --sidebar-ring: hsl(217 91% 60%);
+}
+
+/* Menu items gap + active glow */
+.dispatcher-sidebar [data-slot="sidebar-menu"] {
+  gap: 0.25rem;
+}
+
+.dispatcher-sidebar [data-slot="sidebar-menu-button"][data-active="true"] {
+  background: linear-gradient(135deg, hsl(217 91% 55%) 0%, hsl(230 70% 48%) 100%);
+  color: hsl(0 0% 100%);
+  box-shadow: 0 0 12px hsl(217 91% 60% / 0.35);
+}
+
+/* Group label lighter for contrast */
+.dispatcher-sidebar [data-slot="sidebar-group-label"] {
+  color: hsl(215 20% 55%);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+}
+
+/* Badge pill style */
+.dispatcher-sidebar [data-slot="sidebar-menu-badge"] {
+  background: hsl(217 91% 60% / 0.18);
+  color: hsl(210 100% 80%);
+  border-radius: 9999px;
+  padding-inline: 0.5rem;
+  font-weight: 700;
+  font-size: 0.65rem;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

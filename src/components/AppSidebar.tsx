@@ -13,9 +13,7 @@ import {
   LocateFixed,
   MapPin,
   MapPinned,
-  Phone,
   Send,
-  User,
   X,
 } from "lucide-react";
 
@@ -48,16 +46,13 @@ import Image from "next/image";
 import { dictPriority, dictType } from "@/constants/dictionary";
 import {
   type CitizenRequestSubmissionInput,
+  EMERGENCY_TYPE_OPTIONS,
+  PRIORITY_OPTIONS,
   useCreateCitizenRequestMutation,
 } from "@/lib/api/citizen-requests";
 import CitizenRequestDetailDialog from "./citizen/CitizenRequestDetailDialog";
 
-import {
-  EmergencyCategory,
-  OsmAddressResult,
-  RequestDetail,
-  RequestPriority,
-} from "@/types/request";
+import { OsmAddressResult, RequestDetail } from "@/types/request";
 import { toast } from "sonner";
 
 export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
@@ -65,16 +60,19 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const [emergencyType, setEmergencyType] =
-    useState<EmergencyCategory>("FLOOD");
-  const [priority, setPriority] = useState<RequestPriority>("CRITICAL");
+  // Form state — numeric enums matching backend
+  const [emergencyType, setEmergencyType] = useState<number>(1);
+  const [priority, setPriority] = useState<number>(1);
   const [description, setDescription] = useState("");
   const [addressInput, setAddressInput] = useState("");
   const [landmarkInput, setLandmarkInput] = useState("");
   const [gpsStatus, setGpsStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
-  const [gpsCoords, setGpsCoords] = useState("");
+  const [gpsCoords, setGpsCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [addressResults, setAddressResults] = useState<OsmAddressResult[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [showAddressDropdown, setShowAddressDropdown] = useState(false);
@@ -85,6 +83,17 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
     { file: File; preview: string; type: string }[]
   >([]);
 
+  const resetForm = () => {
+    setEmergencyType(1);
+    setPriority(1);
+    setDescription("");
+    setAddressInput("");
+    setLandmarkInput("");
+    setGpsCoords(null);
+    setGpsStatus("idle");
+    setAttachments([]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -93,32 +102,29 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
       return;
     }
 
-    const [lat, lng] = gpsCoords
-      .split(",")
-      .map((coord) => parseFloat(coord.trim()));
+    if (!description.trim()) {
+      toast.error("Vui lòng mô tả tình trạng sự cố!");
+      return;
+    }
 
     const payload: CitizenRequestSubmissionInput = {
       emergencyType,
       priority,
       description,
       address: addressInput || "Chưa có địa chỉ",
-      latitude: lat,
-      longitude: lng,
+      latitude: gpsCoords.lat,
+      longitude: gpsCoords.lng,
       landmark: landmarkInput || undefined,
-      medias: attachments.map((item) => item.file),
+      medias: attachments.length > 0 ? attachments.map((item) => item.file) : undefined,
     };
 
     try {
       await createRequestMutation.mutateAsync(payload);
-      toast.success("Đã gửi yêu cầu thành công!");
+      toast.success("Đã gửi yêu cầu cứu trợ thành công!", {
+        description: "Đội cứu hộ sẽ tiếp nhận và xử lý ngay.",
+      });
       setIsDialogOpen(false);
-      setAttachments([]);
-      setGpsCoords("");
-      setAddressInput("");
-      setLandmarkInput("");
-      setDescription("");
-      setEmergencyType("FLOOD");
-      setPriority("CRITICAL");
+      resetForm();
     } catch (error) {
       toast.error("Không thể gửi yêu cầu", {
         description:
@@ -146,24 +152,28 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
     setGpsStatus("loading");
     if (!navigator.geolocation) {
       setGpsStatus("error");
+      toast.error("Trình duyệt không hỗ trợ định vị GPS");
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setGpsStatus("success");
-        setGpsCoords(
-          `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`,
-        );
+        setGpsCoords({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
         setTimeout(() => setGpsStatus("idle"), 3000);
       },
       () => {
         setGpsStatus("error");
+        toast.error("Không thể lấy vị trí. Hãy cho phép quyền truy cập vị trí.");
         setTimeout(() => setGpsStatus("idle"), 3000);
       },
       { enableHighAccuracy: true, timeout: 5000 },
     );
   };
 
+  // Address autocomplete
   useEffect(() => {
     if (!addressInput.trim()) {
       setAddressResults([]);
@@ -195,11 +205,24 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
     return () => clearTimeout(delayFn);
   }, [addressInput]);
 
-  const handleSelectAddress = (fullAddress: string) => {
+  const handleSelectAddress = (result: OsmAddressResult) => {
     skipAddressSearch.current = true;
-    setAddressInput(fullAddress);
+    setAddressInput(result.display_name);
     setShowAddressDropdown(false);
+
+    // Auto-fill GPS from selected address
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      setGpsCoords({ lat, lng });
+      setGpsStatus("success");
+      setTimeout(() => setGpsStatus("idle"), 3000);
+    }
   };
+
+  const selectedEmergencyLabel =
+    EMERGENCY_TYPE_OPTIONS.find((opt) => opt.value === emergencyType)?.label ?? "";
+  const selectedPriority = PRIORITY_OPTIONS.find((opt) => opt.value === priority);
 
   return (
     <Sidebar className="bg-white">
@@ -267,7 +290,10 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
       </SidebarContent>
 
       <SidebarFooter className="p-4 mb-4">
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
           <DialogTrigger asChild>
             <Button className="w-full bg-[#003da5] hover:bg-blue-900 active:bg-blue-950 active:scale-95 text-white font-semibold py-6 rounded-xl shadow-md hover:shadow-lg active:shadow-sm text-base transition-all cursor-pointer duration-200">
               Gửi yêu cầu cứu trợ
@@ -277,8 +303,12 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
           <DialogContent className="sm:max-w-2xl bg-white rounded-2xl overflow-visible max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <div className="flex items-center gap-2">
-                <span className="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  Cấp bách
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                </span>
+                <span className="bg-red-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  Khẩn cấp
                 </span>
               </div>
               <DialogTitle className="text-2xl font-extrabold mt-2 text-slate-900">
@@ -290,98 +320,70 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
             </DialogHeader>
 
             <form className="space-y-5 mt-4" onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800 mb-1">
-                    Họ và tên
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      className="pl-9 bg-slate-50 border-slate-200"
-                      placeholder="Nguyễn Văn A"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800 mb-1">
-                    Số điện thoại *
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      className="pl-9 bg-slate-50 border-slate-200"
-                      placeholder="0905 xxx xxx"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800 mb-1">
-                    Loại sự cố *
-                  </label>
-                  <Select
-                    value={emergencyType}
-                    onValueChange={(value) =>
-                      setEmergencyType(value as EmergencyCategory)
-                    }
-                  >
-                    <SelectTrigger className="bg-slate-50 border-slate-200">
-                      <SelectValue placeholder="-- Chọn sự cố --" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="FIRE">Hỏa hoạn / Cháy nổ</SelectItem>
-                      <SelectItem value="FLOOD">Ngập lụt / Lũ quét</SelectItem>
-                      <SelectItem value="MEDICAL">Cấp cứu y tế</SelectItem>
-                      <SelectItem value="LANDSLIDE">Sạt lở đất</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800 mb-1">
-                    Mức độ ưu tiên *
-                  </label>
-                  <Select
-                    value={priority}
-                    onValueChange={(value) =>
-                      setPriority(value as RequestPriority)
-                    }
-                  >
-                    <SelectTrigger className="bg-slate-50 border-slate-200 text-red-600 font-medium">
-                      <SelectValue placeholder="-- Chọn mức độ --" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        value="CRITICAL"
-                        className="text-red-600 font-bold"
-                      >
-                        CRITICAL - Cực kỳ khẩn cấp
-                      </SelectItem>
-                      <SelectItem
-                        value="HIGH"
-                        className="text-orange-600 font-bold"
-                      >
-                        HIGH - Nguy hiểm cao
-                      </SelectItem>
-                      <SelectItem value="MEDIUM" className="text-blue-600">
-                        MEDIUM - Trung bình
-                      </SelectItem>
-                      <SelectItem value="LOW" className="text-slate-600">
-                        LOW - Thấp
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* === LOẠI SỰ CỐ === */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                  Loại sự cố *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {EMERGENCY_TYPE_OPTIONS.map((option) => (
+                    <button
+                      type="button"
+                      key={option.value}
+                      onClick={() => setEmergencyType(option.value)}
+                      className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                        emergencyType === option.value
+                          ? "border-[#003da5] bg-blue-50 text-[#003da5] shadow-sm ring-1 ring-blue-200"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="text-base leading-none">
+                        {option.label.split(" ")[0]}
+                      </span>
+                      <span className="text-[10px] text-center leading-tight">
+                        {option.label.split(" ").slice(1).join(" ")}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
+              {/* === MỨC ĐỘ ƯU TIÊN === */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                  Mức độ ưu tiên *
+                </label>
+                <Select
+                  value={String(priority)}
+                  onValueChange={(value) => setPriority(Number(value))}
+                >
+                  <SelectTrigger className={`border-2 font-semibold transition-colors ${
+                    selectedPriority ? `${selectedPriority.color} ${selectedPriority.bg}` : "bg-slate-50 border-slate-200"
+                  }`}>
+                    <SelectValue placeholder="-- Chọn mức độ --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={String(option.value)}
+                        className={`${option.color} font-bold`}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* === VỊ TRÍ SỰ CỐ === */}
               <div className="bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 space-y-4">
                 <div className="flex items-center gap-2 text-slate-800 font-semibold mb-1">
                   <MapPinned className="w-5 h-5 text-[#003da5]" />
                   Thông tin vị trí sự cố
                 </div>
 
+                {/* GPS Button */}
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1.5 uppercase tracking-wider">
                     1. Tọa độ bản đồ
@@ -422,12 +424,13 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
                     </Button>
                     {gpsCoords && (
                       <div className="text-sm font-mono text-green-700 bg-white px-3 py-2 rounded-lg border border-green-100 flex-1 text-center shadow-sm">
-                        {gpsCoords}
+                        {gpsCoords.lat.toFixed(5)}, {gpsCoords.lng.toFixed(5)}
                       </div>
                     )}
                   </div>
                 </div>
 
+                {/* Address + Landmark */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-50">
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1.5 uppercase tracking-wider">
@@ -453,10 +456,9 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
                         {addressResults.map(
                           (item: OsmAddressResult, index: number) => (
                             <button
+                              type="button"
                               key={item.place_id || index}
-                              onClick={() =>
-                                handleSelectAddress(item.display_name)
-                              }
+                              onClick={() => handleSelectAddress(item)}
                               className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 border-b border-slate-100 last:border-none transition-colors truncate"
                             >
                               {item.display_name}
@@ -480,18 +482,20 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
                 </div>
               </div>
 
+              {/* === MÔ TẢ === */}
               <div>
                 <label className="block text-sm font-semibold text-slate-800 mb-1">
                   Mô tả tình trạng chi tiết *
                 </label>
                 <Textarea
                   className="bg-slate-50 border-slate-200 min-h-[80px]"
-                  placeholder="Nước ngập đến đâu? Có trẻ em/người già không?..."
+                  placeholder="Mô tả chi tiết tình trạng: nước ngập đến đâu, có bao nhiêu người cần cứu, tình trạng sức khoẻ..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
 
+              {/* === ĐÍNH KÈM === */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-slate-800">
                   Đính kèm minh chứng (Ảnh/Video)
@@ -540,16 +544,29 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-2">
+              {/* === SUBMIT === */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <div className="text-xs text-slate-400">
+                  {selectedEmergencyLabel && (
+                    <span className="inline-flex items-center gap-1">
+                      {selectedEmergencyLabel}
+                      {selectedPriority && (
+                        <span className={`font-bold ${selectedPriority.color}`}>
+                          • {selectedPriority.label}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
                 <Button
                   type="submit"
-                  disabled={createRequestMutation.isPending}
-                  className="bg-[#003da5] hover:bg-blue-800 active:bg-blue-900 active:scale-95 text-white px-10 h-12 text-md font-bold shadow-lg transition-all duration-200"
+                  disabled={createRequestMutation.isPending || !gpsCoords || !description.trim()}
+                  className="bg-[#003da5] hover:bg-blue-800 active:bg-blue-900 active:scale-95 text-white px-8 h-12 text-md font-bold shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {createRequestMutation.isPending ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : null}
-                  GỬI YÊU CẦU CỨU TRỢ <Send className="w-4 h-4 ml-2" />
+                  GỬI CỨU TRỢ <Send className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </form>

@@ -1,5 +1,6 @@
 import { apiRequest } from "./client";
 import { apiRouteBuilders, apiRoutes } from "./endpoints";
+import type { MemberDashboardData } from "@/types/rescue-team/member";
 import type {
   ApiResponse,
   AuthTokenPayload,
@@ -350,6 +351,12 @@ export const rescueTeamsApi = {
       method: "GET",
       url: apiRouteBuilders.rescueTeams.missions(teamId),
       params,
+    });
+  },
+  memberDashboard() {
+    return apiRequest<ApiResponse<MemberDashboardData>>({
+      method: "GET",
+      url: apiRouteBuilders.rescueTeams.memberDashboard(),
     });
   },
 };

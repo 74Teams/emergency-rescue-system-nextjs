@@ -12,9 +12,9 @@ export const apiRoutes = {
     contact: "/auth/contact",
   },
   users: "/users",
-  locations: "/location",
+  locations: "/locations",
   requests: "/requests",
-  rescueTeams: "/rescue-teams",
+  rescueTeams: "/rescueteam",
   missions: "/missions",
   reports: "/reports",
   roles: "/roles",
@@ -42,6 +42,7 @@ export const apiRouteBuilders = {
     member: (teamId: string, memberId: string) =>
       `${apiRoutes.rescueTeams}/${teamId}/member/${memberId}`,
     missions: (teamId: string) => `${apiRoutes.rescueTeams}/${teamId}/missions`,
+    memberDashboard: () => `${apiRoutes.rescueTeams}/member/dashboard`,
   },
   missions: {
     byId: (missionId: string) => `${apiRoutes.missions}/${missionId}`,

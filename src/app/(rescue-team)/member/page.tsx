@@ -1,10 +1,11 @@
 "use client";
 
 import {
-  ArrowUpRight,
+  Activity,
   Bell,
   BellRing,
   CheckCircle2,
+  ChevronRight,
   ClipboardList,
   Clock3,
   Crosshair,
@@ -12,7 +13,6 @@ import {
   Info,
   LogOut,
   MapPin,
-  Menu,
   MessageSquare,
   Navigation,
   Phone,
@@ -20,7 +20,6 @@ import {
   ShieldAlert,
   Target,
   UserCircle,
-  UserSquare2,
   XCircle,
   Zap,
 } from "lucide-react";
@@ -35,71 +34,82 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
-import { MOCK_MEMBER_DASHBOARD } from "@/data/rescue-team/mockApiMember";
 import {
   MemberDashboardData,
   RescuerNotification,
 } from "@/types/rescue-team/member";
+import { cn } from "@/lib/utils";
+import { useMemberDashboard } from "@/hooks/use-member-dashboard";
 
 const MiniMap = dynamic(
   () => import("@/components/rescue-team/member/MiniMap"),
-  { ssr: false },
+  { ssr: false }
 );
+
 const NavigateMap = dynamic(() => import("@/components/NavigateMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex-1 flex items-center justify-center bg-slate-50">
-      <span className="animate-pulse">Đang tải luồng dẫn đường...</span>
+    <div className="flex-1 flex flex-col items-center justify-center bg-card rounded-xl border h-full w-full">
+      <div className="size-10 rounded-full border-4 border-muted border-t-primary animate-spin mb-4"></div>
+      <span className="font-medium text-muted-foreground text-sm">Đang tải bản đồ...</span>
     </div>
   ),
 });
-const getNotificationStyle = (type: string) => {
+
+const getNotificationDetails = (type: string) => {
   switch (type) {
     case "NEW_MISSION_ASSIGNED":
       return {
-        wrapper: "bg-orange-50 border-orange-100 border-l-orange-500",
-        iconBg: "bg-white border-orange-200 text-orange-600",
-        title: "text-orange-800",
-        icon: <BellRing className="w-4 h-4" />,
+        badgeVariant: "destructive" as const,
+        icon: <BellRing className="size-4 text-destructive" />,
+        bg: "bg-destructive/10",
       };
     case "MISSION_CANCELED":
       return {
-        wrapper: "bg-red-50 border-red-100 border-l-red-500",
-        iconBg: "bg-white border-red-200 text-red-600",
-        title: "text-red-800",
-        icon: <XCircle className="w-4 h-4" />,
+        badgeVariant: "destructive" as const,
+        icon: <XCircle className="size-4 text-destructive" />,
+        bg: "bg-destructive/10",
       };
     case "SYSTEM_ALERT":
       return {
-        wrapper: "bg-blue-50 border-blue-100 border-l-blue-500",
-        iconBg: "bg-white border-blue-200 text-blue-600",
-        title: "text-blue-800",
-        icon: <Info className="w-4 h-4" />,
+        badgeVariant: "default" as const,
+        icon: <Info className="size-4 text-primary" />,
+        bg: "bg-primary/10",
       };
     case "LEAVE_APPROVED":
       return {
-        wrapper: "bg-emerald-50 border-emerald-100 border-l-emerald-500",
-        iconBg: "bg-white border-emerald-200 text-emerald-600",
-        title: "text-emerald-800",
-        icon: <CheckCircle2 className="w-4 h-4" />,
+        badgeVariant: "secondary" as const,
+        icon: <CheckCircle2 className="size-4 text-emerald-500" />,
+        bg: "bg-emerald-500/10",
       };
     case "LEAVE_REJECTED":
       return {
-        wrapper: "bg-slate-50 border-slate-200 border-l-slate-500",
-        iconBg: "bg-white border-slate-300 text-slate-600",
-        title: "text-slate-800",
-        icon: <FileWarning className="w-4 h-4" />,
+        badgeVariant: "outline" as const,
+        icon: <FileWarning className="size-4 text-muted-foreground" />,
+        bg: "bg-muted",
       };
     default:
       return {
-        wrapper: "bg-slate-50 border-slate-100 border-l-slate-400",
-        iconBg: "bg-white border-slate-200 text-slate-500",
-        title: "text-slate-700",
-        icon: <Bell className="w-4 h-4" />,
+        badgeVariant: "secondary" as const,
+        icon: <Bell className="size-4 text-muted-foreground" />,
+        bg: "bg-muted",
       };
   }
 };
+
 const formatTimeAgoSafe = (isoString: string) => {
   try {
     const past = new Date(isoString).getTime();
@@ -118,423 +128,468 @@ const formatTimeAgoSafe = (isoString: string) => {
 };
 
 export default function MemberDashboardPage() {
-  const data: MemberDashboardData = MOCK_MEMBER_DASHBOARD.data;
+  const { data, isLoading, isError } = useMemberDashboard();
 
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="size-10 rounded-full border-4 border-muted border-t-primary animate-spin"></div>
+          <p className="text-muted-foreground font-medium">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-destructive flex-col gap-2">
+        <XCircle className="size-12 opacity-50" />
+        <p className="font-semibold">Đã có lỗi xảy ra khi tải dữ liệu</p>
+      </div>
+    );
+  }
+
+  return <MemberDashboardContent data={data} />;
+}
+
+function MemberDashboardContent({ data }: { data: MemberDashboardData }) {
   const [isOnline, setIsOnline] = useState(data.dutyStatus.isOnline);
   const [activeTab, setActiveTab] = useState<
     "missions" | "chat" | "navigate" | "duty"
   >(data.activeMission ? "navigate" : "missions");
   const [isNotiOpen, setIsNotiOpen] = useState(false);
 
-  const shortName = data.profile.fullName.split(" ").pop();
   const avatarInitials = data.profile.fullName
     .split(" ")
     .map((n) => n[0])
     .join("")
     .substring(0, 2);
+
   const mainVictim = data.activeMission?.victims?.[0];
 
   const visibleNotifications = data.activeMission
     ? data.notifications.filter((noti) => noti.type !== "NEW_MISSION_ASSIGNED")
     : data.notifications;
 
-  const handleToggleStatus = () => {
-    setIsOnline((prevStatus) => !prevStatus);
-  };
-
-  const renderNotificationCard = (notification: RescuerNotification) => {
-    const style = getNotificationStyle(notification.type);
+  const renderNotificationItem = (notification: RescuerNotification) => {
+    const details = getNotificationDetails(notification.type);
 
     return (
       <div
         key={notification.id}
-        className={`p-3 rounded-xl border border-l-4 shadow-sm flex flex-col gap-2.5 transition-all ${style.wrapper}`}
+        className="flex flex-col gap-3 p-4 border rounded-lg bg-card transition-colors hover:bg-muted/50"
       >
-        <div className="flex items-start gap-2.5">
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm ${style.iconBg}`}
-          >
-            {style.icon}
+        <div className="flex gap-4">
+          <div className={cn("size-10 rounded-md flex items-center justify-center shrink-0", details.bg)}>
+            {details.icon}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start gap-2">
-              <h3
-                className={`text-xs font-black uppercase tracking-tight leading-snug truncate ${style.title}`}
-              >
+            <div className="flex justify-between items-start mb-1 gap-2">
+              <h4 className="text-sm font-semibold truncate text-foreground">
                 {notification.title}
-              </h3>
-              <span
-                suppressHydrationWarning
-                className="text-[9px] text-slate-500 font-medium flex items-center gap-1 shrink-0 mt-0.5"
-              >
-                <Clock3 className="w-2.5 h-2.5" />{" "}
+              </h4>
+              <span className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1">
                 {formatTimeAgoSafe(notification.createdAt)}
               </span>
             </div>
-            <p className="text-xs text-slate-600 mt-1 leading-snug line-clamp-2">
+            <p className="text-sm text-muted-foreground line-clamp-2">
               {notification.message}
             </p>
           </div>
         </div>
 
-        {/* Nút thao tác tùy theo loại thông báo */}
+        {/* Action Buttons */}
         {notification.type === "NEW_MISSION_ASSIGNED" && (
-          <div className="flex gap-2 pt-2 mt-0.5 border-t border-orange-200/50">
-            <button
+          <div className="flex gap-2 mt-2">
+            <Button
+              size="sm"
+              className="flex-1"
               onClick={() => {
                 toast.success("Đã tiếp nhận nhiệm vụ!", {
                   description: "Đang tải dữ liệu bản đồ...",
                 });
-                setIsNotiOpen(false); // Tự động đóng Sidebar nếu đang mở
+                setIsNotiOpen(false);
                 setTimeout(() => setActiveTab("navigate"), 800);
               }}
-              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-[11px] py-1.5 rounded-lg font-bold shadow-sm active:scale-95 transition-all"
             >
-              TIẾP NHẬN
-            </button>
-            <button
+              Tiếp nhận
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 text-destructive hover:text-destructive"
               onClick={() =>
                 toast.error("Đã từ chối nhiệm vụ", {
                   description: "Đã báo cáo về Trung tâm điều phối.",
                 })
               }
-              className="flex-1 bg-white border border-orange-200 text-orange-600 hover:bg-orange-50 text-[11px] py-1.5 rounded-lg font-bold active:scale-95 transition-all"
             >
-              TỪ CHỐI
-            </button>
+              Từ chối
+            </Button>
           </div>
         )}
-        {notification.type === "MISSION_CANCELED" && (
-          <div className="flex gap-2 pt-2 mt-0.5 border-t border-red-200/50">
-            <button
-              onClick={() => toast.success("Đã xác nhận hủy nhiệm vụ.")}
-              className="flex-1 bg-white border border-red-200 text-red-600 hover:bg-red-50 text-[11px] py-1.5 rounded-lg font-bold shadow-sm active:scale-95 transition-all"
-            >
-              XÁC NHẬN ĐÃ ĐỌC
-            </button>
-          </div>
-        )}
-        {notification.type === "SYSTEM_ALERT" && (
-          <div className="flex gap-2 pt-2 mt-0.5 border-t border-blue-200/50">
-            <button
+        {(notification.type === "MISSION_CANCELED" || notification.type === "SYSTEM_ALERT") && (
+          <div className="flex mt-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="w-full"
               onClick={() => toast.success("Đã xác nhận.")}
-              className="flex-1 bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 text-[11px] py-1.5 rounded-lg font-bold shadow-sm active:scale-95 transition-all"
             >
-              XÁC NHẬN ĐÃ ĐỌC
-            </button>
+              Xác nhận đã đọc
+            </Button>
           </div>
         )}
       </div>
     );
   };
 
+  const teamName = (data as any).team?.name || "Đội Cứu Hộ Hạt Nhân";
+  const leaderName = (data as any).team?.leaderName || "Trưởng Nhóm";
+  const missionId = data.activeMission?.id
+    ? data.activeMission.id.split("-")[0].toUpperCase()
+    : "MIS-001";
+
+  const navigation = [
+    { id: "missions", label: "Tổng quan", icon: Zap },
+    { id: "navigate", label: "Bản đồ", icon: Navigation },
+    { id: "chat", label: "Trao đổi", icon: MessageSquare },
+    { id: "duty", label: "Lịch trực", icon: ClipboardList },
+  ] as const;
+
   return (
-    <div className="min-h-screen bg-slate-950 flex justify-center p-0 md:p-4 font-sans text-slate-900">
-      <div className="w-full max-w-[400px] h-full min-h-screen bg-white md:rounded-[36px] md:shadow-2xl overflow-hidden flex flex-col relative">
-        {/* ================= TAB 1: TRANG NHIỆM VỤ (MẶC ĐỊNH) ================= */}
-        {activeTab === "missions" && (
-          <>
-            {/* HEADER CỦA TAB MISSIONS */}
-            <div className="flex justify-between items-center p-4 bg-white sticky top-0 z-10 border-b border-slate-100">
-              {/* === BÊN TRÁI: MENU & LỜI CHÀO (Đã gộp lại) === */}
-              <div className="flex items-center gap-2">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <button className="p-2 -ml-2 rounded-xl hover:bg-slate-100 transition active:scale-95">
-                      <Menu className="w-7 h-7 text-slate-700" />
-                    </button>
-                  </SheetTrigger>
-                  <SheetContent
-                    side="left"
-                    className="w-[300px] sm:w-[320px] p-0 flex flex-col"
-                  >
-                    <SheetHeader className="p-6 text-left border-b border-slate-100 bg-slate-50/50">
-                      <SheetTitle className="text-[#003da5] font-black text-xl flex items-center gap-2">
-                        <ShieldAlert className="w-6 h-6" /> RESCUE CORE
-                      </SheetTitle>
-                      <div className="flex items-center gap-3 mt-6">
-                        <div className="w-12 h-12 rounded-full bg-[#003da5] text-white flex items-center justify-center font-bold text-lg">
-                          {avatarInitials}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-slate-900">
-                            {data.profile.fullName}
-                          </h3>
-                          <p className="text-xs text-slate-500 font-medium">
-                            {data.profile.specialty}
-                          </p>
-                        </div>
-                      </div>
-                    </SheetHeader>
-                    <div className="flex-1 p-4 space-y-2">
-                      <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 transition text-slate-700 font-semibold">
-                        <UserCircle className="w-5 h-5 text-slate-500" /> Hồ sơ
-                        cá nhân
-                      </button>
-                      <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 transition text-slate-700 font-semibold">
-                        <ClipboardList className="w-5 h-5 text-slate-500" />{" "}
-                        Lịch sử nhiệm vụ
-                      </button>
-                      <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 transition text-slate-700 font-semibold">
-                        <Settings className="w-5 h-5 text-slate-500" /> Cài đặt
-                        ứng dụng
-                      </button>
-                    </div>
-                    <div className="p-4 border-t border-slate-100">
-                      <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition text-red-600 font-bold">
-                        <LogOut className="w-5 h-5" /> Đăng xuất
-                      </button>
-                    </div>
-                  </SheetContent>
-                </Sheet>
+    <div className="flex min-h-screen w-full flex-col bg-background md:flex-row">
+      {/* Sidebar */}
+      <aside className="hidden border-r bg-card md:flex md:w-[260px] flex-col">
+        <div className="flex h-14 items-center border-b px-4 lg:h-[60px]">
+          <div className="flex items-center gap-2 font-semibold text-primary">
+            <ShieldAlert className="size-5" />
+            <span className="truncate">Rescue Portal</span>
+          </div>
+        </div>
 
-                <div className="text-[15px] font-medium text-slate-800 ml-1">
-                  Xin chào,{" "}
-                  <span className="text-[#003da5] font-bold">{shortName}</span>
-                </div>
-              </div>
-
-              {/* === BÊN PHẢI: CHUÔNG & AVATAR === */}
-              <div className="flex items-center gap-3">
-                {/* Nút Chuông Thông Báo */}
-                <button
-                  onClick={() => setIsNotiOpen(true)}
-                  className="relative p-1 rounded-full hover:bg-slate-100 transition active:scale-95"
-                >
-                  <Bell className="w-6 h-6 text-slate-600" />
-                  {/* Chấm đỏ thông báo */}
-                  {visibleNotifications.length > 0 && (
-                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#f43f5e] border-[2px] border-white rounded-full"></span>
-                  )}
-                </button>
-
-                {/* Avatar người dùng */}
-                <div className="w-10 h-10 rounded-full bg-[#0047A0] flex items-center justify-center text-white font-bold text-[15px] shadow-sm">
+        <ScrollArea className="flex-1">
+          <div className="flex flex-col gap-6 p-4">
+            {/* Profile Section */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                   {avatarInitials}
                 </div>
+                <span className={cn(
+                  "absolute bottom-0 right-0 size-3 rounded-full border-2 border-background",
+                  isOnline ? "bg-emerald-500" : "bg-muted-foreground"
+                )}></span>
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold truncate">{data.profile.fullName}</span>
+                <span className="text-xs text-muted-foreground truncate">{data.profile.specialty}</span>
               </div>
             </div>
 
-            {/* === SIDEBAR PHẢI (DANH SÁCH TẤT CẢ THÔNG BÁO) === */}
-            <Sheet open={isNotiOpen} onOpenChange={setIsNotiOpen}>
-              <SheetContent
-                side="right"
-                className="w-[320px] sm:w-[380px] p-0 flex flex-col bg-slate-50 z-10000"
-              >
-                <SheetHeader className="p-4 bg-white border-b border-slate-100 flex-shrink-0">
-                  <SheetTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
-                    <BellRing className="w-5 h-5 text-[#003da5]" /> Thông báo
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {visibleNotifications.length === 0 ? (
-                    <div className="text-center text-slate-500 py-10 text-sm">
-                      Bạn không có thông báo nào.
-                    </div>
-                  ) : (
-                    visibleNotifications.map((noti) =>
-                      renderNotificationCard(noti),
-                    )
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            {/* NỘI DUNG CUỘN CỦA TAB MISSIONS */}
-            <div className="flex-1 overflow-y-auto pb-24 px-4 space-y-5 mt-2">
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <h2 className="text-[15px] font-bold text-slate-900">
-                    Trạng thái làm việc
-                  </h2>
-                  <p className="text-[13px] text-slate-500 mt-0.5">
-                    Bạn đang{" "}
-                    {isOnline ? "trực tuyến và sẵn sàng" : "ngoại tuyến"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleToggleStatus}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${isOnline ? "bg-[#003da5]" : "bg-slate-200"}`}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out mt-0.5 ${isOnline ? "translate-x-[22px]" : "translate-x-0.5"}`}
-                    />
-                  </button>
-                  <span
-                    className={`text-xs font-bold uppercase w-12 ${isOnline ? "text-[#003da5]" : "text-slate-400"}`}
-                  >
-                    {isOnline ? "ONLINE" : "OFFLINE"}
-                  </span>
-                </div>
-              </div>
-
-              {/*3 Thong bao moi nhat */}
-              {visibleNotifications
-                .slice(0, 3)
-                .map((noti) => renderNotificationCard(noti))}
-
-              {/* NẾU CÓ NHIỀU HƠN 3 THÔNG BÁO -> HIỆN NÚT XEM THÊM */}
-              {visibleNotifications.length > 3 && (
+            {/* Status Toggle */}
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trạng thái trực</span>
+              <div className="flex p-1 bg-muted/50 rounded-lg border">
                 <button
-                  onClick={() => setIsNotiOpen(true)}
-                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 text-xs font-bold rounded-xl transition-colors active:scale-95"
+                  onClick={() => setIsOnline(true)}
+                  className={cn(
+                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
+                    isOnline ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
                 >
-                  Xem tất cả {visibleNotifications.length} thông báo
+                  Online
                 </button>
-              )}
-
-              {data.activeMission ? (
-                <>
-                  <div>
-                    <h2 className="text-[15px] font-black text-slate-900 uppercase tracking-tight mb-3">
-                      NHIỆM VỤ HIỆN TẠI
-                    </h2>
-                    <div className="bg-white p-4 rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border border-slate-100 relative overflow-hidden">
-                      <div className="absolute top-0 right-0">
-                        <span className="bg-blue-50 text-[#003da5] font-bold text-[10px] px-3 py-2 rounded-bl-2xl uppercase tracking-wider">
-                          Đang thực hiện
-                        </span>
-                      </div>
-
-                      <h3 className="text-[22px] font-black text-[#003da5] leading-tight mt-6 mb-4 pr-4">
-                        {data.activeMission.title}
-                      </h3>
-
-                      {mainVictim && (
-                        <div className="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 mb-4 bg-white shadow-sm">
-                          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100">
-                            <UserSquare2 className="w-6 h-6 text-[#003da5]" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase">
-                              Người cần hỗ trợ{" "}
-                              {data.activeMission.victims.length > 1
-                                ? `(+${data.activeMission.victims.length - 1} người)`
-                                : ""}
-                            </p>
-                            <p className="text-[15px] font-bold text-slate-900">
-                              {mainVictim.fullName}{" "}
-                              {mainVictim.age ? `(${mainVictim.age} tuổi)` : ""}
-                            </p>
-                            <p className="text-[12px] text-slate-500 italic line-clamp-1">
-                              {mainVictim.condition}
-                            </p>
-                          </div>
-                          <button className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-[#003da5] hover:bg-blue-100 transition border border-blue-100 shrink-0">
-                            <Phone className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-2 gap-3 mb-2">
-                        <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5 mb-1">
-                            <MapPin className="w-3 h-3 text-red-500 shrink-0" />{" "}
-                            VỊ TRÍ
-                          </p>
-                          <p className="text-[13px] font-semibold text-slate-800 leading-snug truncate">
-                            {data.activeMission.location.address}
-                          </p>
-                        </div>
-                        <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5 mb-1">
-                            <Target className="w-3 h-3 text-[#003da5]" /> KHOẢNG
-                            CÁCH
-                          </p>
-                          <p className="text-xl font-black text-[#003da5]">
-                            {data.activeMission.location.distanceKm} km
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-3xl shadow-sm border border-slate-100 relative h-[250px] overflow-hidden">
-                    <div className="absolute inset-0 opacity-80 z-0">
-                      <MiniMap
-                        lat={data.activeMission.location.latitude}
-                        lng={data.activeMission.location.longitude}
-                      />
-                    </div>
-                    <div className="absolute bottom-16 right-3 z-10">
-                      <button className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center text-slate-600 border border-slate-100 hover:text-[#003da5] active:scale-95 transition-all">
-                        <Crosshair className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <div className="absolute bottom-0 right-0 z-10">
-                      <button
-                        onClick={() => setActiveTab("navigate")} // CLICK Ở ĐÂY SẼ CHUYỂN SANG TAB DẪN ĐƯỜNG
-                        className="w-14 h-14 rounded-tl-2xl bg-[#003da5] text-white flex items-center justify-center shadow-lg hover:bg-blue-800 transition active:scale-95"
-                      >
-                        <ArrowUpRight className="w-6 h-6" />
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-8 flex flex-col items-center justify-center text-center mt-10">
-                  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                    <Zap className="w-10 h-10 text-slate-300" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-700">
-                    Chưa có nhiệm vụ
-                  </h3>
-                  <p className="text-sm text-slate-500 mt-2">
-                    Hãy giữ trạng thái Online để sẵn sàng nhận lệnh từ Trưởng
-                    nhóm.
-                  </p>
-                </div>
-              )}
+                <button
+                  onClick={() => setIsOnline(false)}
+                  className={cn(
+                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
+                    !isOnline ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Offline
+                </button>
+              </div>
             </div>
-          </>
-        )}
 
-        {/* ================= TAB 2: TRANG DẪN ĐƯỜNG ================= */}
-        {activeTab === "navigate" && (
-          <div className="flex-1 w-full relative min-h-0 overflow-hidden">
-            <NavigateMap mission={data.activeMission} />
+            <Separator />
+
+            {/* Main Navigation */}
+            <nav className="flex flex-col gap-1">
+              {navigation.map((item) => {
+                const isActive = activeTab === item.id;
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="size-4" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
-        )}
-        {/* ================= THANH ĐIỀU HƯỚNG BOTTOM (CỐ ĐỊNH) ================= */}
-        {/* Nâng z-[9999] để nó luôn nằm trên cùng, không bị map đè */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-2 flex justify-around items-center pb-4 pt-3 z-9999">
-          <button
-            onClick={() => setActiveTab("missions")}
-            className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === "missions" ? "text-[#003da5] font-bold" : "text-slate-400 hover:text-[#003da5]"}`}
-          >
-            <Zap className="w-6 h-6 shrink-0" />
-            <span className="text-[10px] uppercase tracking-wider">
-              Missions
-            </span>
-          </button>
+        </ScrollArea>
 
-          <button
-            onClick={() => setActiveTab("chat")}
-            className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === "chat" ? "text-[#003da5] font-bold" : "text-slate-400 hover:text-[#003da5]"}`}
-          >
-            <MessageSquare className="w-6 h-6 shrink-0" />
-            <span className="text-[10px] uppercase tracking-wider">Chat</span>
+        {/* Footer Sidebar */}
+        <div className="p-4 border-t mt-auto">
+          <button className="flex items-center gap-3 w-full rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+            <Settings className="size-4" />
+            Cài đặt
           </button>
-
-          <button
-            onClick={() => setActiveTab("navigate")}
-            className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === "navigate" ? "text-[#003da5] font-bold" : "text-slate-400 hover:text-[#003da5]"}`}
-          >
-            <Navigation className="w-6 h-6 shrink-0" />
-            <span className="text-[10px] uppercase tracking-wider">
-              Navigate
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("duty")}
-            className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === "duty" ? "text-[#003da5] font-bold" : "text-slate-400 hover:text-[#003da5]"}`}
-          >
-            <ClipboardList className="w-6 h-6 shrink-0" />
-            <span className="text-[10px] uppercase tracking-wider">Duty</span>
+          <button className="flex items-center gap-3 w-full rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors mt-1">
+            <LogOut className="size-4" />
+            Đăng xuất
           </button>
         </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 min-w-0">
+        <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+          <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            {navigation.find((n) => n.id === activeTab)?.label}
+          </h1>
+
+          <div className="flex items-center gap-4">
+            <Sheet open={isNotiOpen} onOpenChange={setIsNotiOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="relative">
+                  <Bell className="size-4" />
+                  {visibleNotifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 size-2.5 bg-destructive rounded-full border-2 border-background"></span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[400px] sm:w-[540px] flex flex-col p-0">
+                <SheetHeader className="p-6 border-b">
+                  <SheetTitle className="flex items-center gap-2">
+                    <BellRing className="size-5 text-primary" />
+                    Thông báo
+                  </SheetTitle>
+                </SheetHeader>
+                <ScrollArea className="flex-1 p-6">
+                  <div className="flex flex-col gap-4">
+                    {visibleNotifications.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-center">
+                        <CheckCircle2 className="size-12 mb-4 opacity-20" />
+                        <p className="text-sm">Không có thông báo mới.</p>
+                      </div>
+                    ) : (
+                      visibleNotifications.map(renderNotificationItem)
+                    )}
+                  </div>
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </header>
+
+        <main className="flex-1 flex flex-col p-4 lg:p-6 overflow-y-auto">
+          {activeTab === "missions" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Active Mission or Empty State */}
+              <div className="lg:col-span-2 flex flex-col gap-6">
+                {data.activeMission ? (
+                  <Card className="border-destructive/20 shadow-sm overflow-hidden flex flex-col h-full">
+                    <CardHeader className="bg-destructive/5 pb-6 border-b border-destructive/10">
+                      <div className="flex justify-between items-start">
+                        <div className="flex flex-col gap-2">
+                          <Badge variant="destructive" className="w-fit animate-pulse">
+                            Nhiệm vụ khẩn cấp
+                          </Badge>
+                          <CardTitle className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                            {data.activeMission.title}
+                          </CardTitle>
+                        </div>
+                        <div className="flex flex-col items-end text-right">
+                          <span className="text-xs font-medium text-muted-foreground uppercase">Mã Phiếu</span>
+                          <span className="font-mono text-lg font-bold">#{missionId}</span>
+                        </div>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="p-0 flex-1 flex flex-col md:flex-row">
+                      <div className="flex-1 flex flex-col gap-6 p-6 border-b md:border-b-0 md:border-r border-border">
+                        {/* Victim Info */}
+                        {mainVictim && (
+                          <div className="flex flex-col gap-3">
+                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                              Người cần hỗ trợ
+                            </h4>
+                            <div className="flex items-center gap-4 bg-muted/50 p-4 rounded-lg border">
+                              <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <UserCircle className="size-5 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-base font-semibold truncate text-foreground">
+                                  {mainVictim.fullName} {mainVictim.age && `(${mainVictim.age}T)`}
+                                </p>
+                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                  {mainVictim.condition}
+                                </p>
+                              </div>
+                              <Button variant="secondary" size="icon" className="shrink-0 rounded-full">
+                                <Phone className="size-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Location Details */}
+                        <div className="flex flex-col gap-3 mt-auto">
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Định vị
+                          </h4>
+                          <div className="flex items-start gap-3 p-4 rounded-lg border bg-card shadow-sm">
+                            <MapPin className="size-5 text-primary mt-0.5 shrink-0" />
+                            <div className="flex flex-col gap-1 flex-1">
+                              <p className="text-sm font-medium leading-snug">{data.activeMission.location.address}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="secondary" className="font-mono">
+                                  {data.activeMission.location.distanceKm} km
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">Ước tính khoảng cách</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Map View */}
+                      <div className="flex-1 relative min-h-[250px] bg-muted/30">
+                        <div className="absolute inset-0 z-10 opacity-90 hover:opacity-100 transition-opacity">
+                          <MiniMap
+                            lat={data.activeMission.location.latitude}
+                            lng={data.activeMission.location.longitude}
+                          />
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <MapPin className="size-8 text-muted-foreground/30 animate-pulse" />
+                        </div>
+                      </div>
+                    </CardContent>
+                    
+                    <CardFooter className="p-4 border-t bg-muted/10 flex justify-end">
+                      <Button onClick={() => setActiveTab("navigate")}>
+                        <Navigation className="size-4 mr-2" />
+                        Mở bản đồ điều phối
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ) : (
+                  <Card className="flex flex-col items-center justify-center h-full min-h-[400px] border-dashed shadow-none">
+                    <CardContent className="flex flex-col items-center text-center p-6">
+                      <div className="size-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                        <Zap className="size-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2">Sẵn sàng nhận lệnh</h3>
+                      <p className="text-sm text-muted-foreground max-w-[300px]">
+                        Hệ thống đang theo dõi. Đảm bảo trạng thái <strong className="text-emerald-500 font-medium">Online</strong> để nhận nhiệm vụ.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Sidebar Info & Notifications */}
+              <div className="flex flex-col gap-6">
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
+                      <ShieldAlert className="size-4" /> Đơn vị trực thuộc
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-4">
+                    <h3 className="text-2xl font-bold tracking-tight">{teamName}</h3>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+                      <div className="size-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
+                        {leaderName.charAt(0)}
+                      </div>
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <span className="text-sm font-semibold truncate">{leaderName}</span>
+                        <span className="text-xs text-muted-foreground">Đội trưởng</span>
+                      </div>
+                      <Button variant="ghost" size="icon" className="shrink-0">
+                        <MessageSquare className="size-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="flex-1 flex flex-col min-h-[300px]">
+                  <CardHeader className="pb-3 border-b px-4 py-4 flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-sm font-semibold">Hoạt động mới</CardTitle>
+                    {visibleNotifications.length > 4 && (
+                      <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => setIsNotiOpen(true)}>
+                        Xem tất cả <ChevronRight className="size-3 ml-1" />
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent className="p-0 flex-1 flex flex-col">
+                    <ScrollArea className="flex-1 h-[300px]">
+                      <div className="flex flex-col">
+                        {visibleNotifications.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                            <CheckCircle2 className="size-8 mb-2 opacity-50" />
+                            <span className="text-xs font-medium uppercase">Trống</span>
+                          </div>
+                        ) : (
+                          visibleNotifications.slice(0, 4).map((noti) => (
+                            <div key={noti.id} className="p-4 border-b last:border-0 hover:bg-muted/50 transition-colors flex gap-3">
+                              <div className={cn("size-8 rounded-full flex items-center justify-center shrink-0", getNotificationDetails(noti.type).bg)}>
+                                {getNotificationDetails(noti.type).icon}
+                              </div>
+                              <div className="flex flex-col flex-1 min-w-0 gap-1">
+                                <div className="flex justify-between items-start gap-2">
+                                  <span className="text-sm font-medium truncate">{noti.title}</span>
+                                </div>
+                                <span className="text-xs text-muted-foreground line-clamp-1">{noti.message}</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "navigate" && (
+            <Card className="flex-1 flex flex-col overflow-hidden border shadow-sm">
+              <div className="flex-1 relative min-h-[600px] bg-muted/20">
+                <NavigateMap mission={data.activeMission} />
+              </div>
+            </Card>
+          )}
+
+          {(activeTab === "chat" || activeTab === "duty") && (
+            <Card className="flex-1 flex flex-col items-center justify-center min-h-[500px] border-dashed shadow-none">
+              <CardContent className="flex flex-col items-center text-center p-6 gap-4">
+                <div className="size-16 rounded-full bg-muted flex items-center justify-center">
+                  {activeTab === "chat" ? <MessageSquare className="size-8 text-muted-foreground" /> : <ClipboardList className="size-8 text-muted-foreground" />}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-xl font-semibold text-foreground">Tính năng đang phát triển</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Mô đun <Badge variant="secondary" className="mx-1">{activeTab}</Badge> sẽ được cập nhật trong phiên bản tiếp theo.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </main>
       </div>
     </div>
   );
