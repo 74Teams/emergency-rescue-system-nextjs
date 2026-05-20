@@ -111,6 +111,7 @@ export interface ProfileResponse {
   fullName?: string;
   rescueTeamId?: string;
   teamName?: string;
+  userName?: string;
   email: string;
   phoneNumber?: string;
   avatarUrl?: string;
@@ -241,9 +242,11 @@ export interface RescueTeamSummary {
 }
 
 export interface CreateRescueTeamInput {
-  name: string;
+  teamName: string;
+  teamLeaderId: string;
   description?: string;
-  leaderId: string;
+  baseLocationId?: string;
+  memberIds?: string[];
 }
 
 export interface TeamMemberSummary {
@@ -363,4 +366,39 @@ export interface RescueTeamFilter {
 export interface RescueTeamQueryParams extends PaginationQuery {
   status?: TeamStatus;
   search?: string;
+}
+
+export interface CommanderAccountSummary {
+  id: string;
+  fullName?: string;
+  username: string;
+  email: string;
+  avatarUrl?: string;
+  //address; : string;
+  phoneNumber?: string;
+  isActive: boolean;
+  role: ApiRole[];
+  createdAt?: string;
+}
+
+//  Tham số để filter danh sách tài khoản (áp dụng cho Tab Account Management)
+export interface AccountQueryParams extends PaginationQuery {
+  search?: string;
+  role?: ApiRole | "ALL" | string;
+}
+
+//UserSystemDTO
+export interface UserWithPendingCheck extends ProfileResponse {
+  isActive: boolean;
+  isPendingApproval: boolean;
+}
+
+//TeamMemberDTO
+export interface TeamMemberDTO {
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  avatar?: string;
+  isActive: boolean;
 }

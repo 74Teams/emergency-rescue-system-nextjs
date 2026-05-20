@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rescueTeamsApi } from "../services";
+import { commanderApi } from "../services";
 import type {
   ApiResponse,
   RescueTeamSummary,
   TeamStatus,
   RescueTeamQueryParams,
+  AccountQueryParams,
+  UserWithPendingCheck,
 } from "../types";
 import { apiQueryKeys } from "../query-keys";
+import { apiRequest } from "../client";
+import { apiRouteBuilders } from "../endpoints";
 
 type RescueTeamsResponse = ApiResponse<RescueTeamSummary[]>;
 
@@ -32,32 +37,53 @@ type RescueTeamsResponse = ApiResponse<RescueTeamSummary[]>;
  * - Component tự động re-render với data mới
  * - Có thể mở rộng thêm WebSocket listener để push updates
  */
-export function useRescueTeams(params?: RescueTeamQueryParams) {
-  const queryClient = useQueryClient();
+// export function useRescueTeams(params?: RescueTeamQueryParams) {
+//   const queryClient = useQueryClient();
 
-  const query = useQuery({
-    queryKey: apiQueryKeys.rescueTeams.list(params),
+//   const query = useQuery({
+//     queryKey: apiQueryKeys.rescueTeams.list(params),
+//     queryFn: async () => {
+//       const response = await rescueTeamsApi.list({
+//         ...params,
+//         sortBy: "CreatedAt",
+//       });
+//       return response;
+//     },
+//     refetchInterval: 30000,
+//     refetchOnWindowFocus: true,
+//     staleTime: 5 * 60 * 1000,
+//   });
+
+//   return {
+//     data: query.data?.data ?? [],
+//     isLoading: query.isLoading,
+//     isError: query.isError,
+//     error: query.error,
+//     refetch: query.refetch,
+//   };
+// }
+export function useRescueTeams(params?: {
+  status?: TeamStatus | "ALL" | string;
+}) {
+  const queryParams = params?.status === "ALL" ? undefined : params;
+  return useQuery({
+    queryKey: apiQueryKeys.rescueTeams.list(queryParams),
     queryFn: async () => {
-      const response = await rescueTeamsApi.list({
-        ...params,
-        sortBy: "CreatedAt",
-      });
-      return response;
+      const res = await rescueTeamsApi.list(queryParams);
+      return res.data ?? []; // Trả về mảng RescueTeamSummary[]
     },
-    refetchInterval: 30000,
-    refetchOnWindowFocus: true,
-    staleTime: 5 * 60 * 1000,
   });
-
-  return {
-    data: query.data?.data ?? [],
-    isLoading: query.isLoading,
-    isError: query.isError,
-    error: query.error,
-    refetch: query.refetch,
-  };
 }
-
+export function useRescueTeamMembers(teamId: string | null) {
+  return useQuery({
+    queryKey: ["rescue-teams", teamId, "members"],
+    queryFn: async () => {
+      const res = await rescueTeamsApi.members(teamId!);
+      return res.data ?? [];
+    },
+    enabled: !!teamId,
+  });
+}
 /**
  * Hook để fetch Rescue Teams với location (cho bản đồ)
  *
@@ -141,4 +167,156 @@ export function useTeamMissions(teamId: string) {
     isError: query.isError,
     error: query.error,
   };
+}
+
+//COMMANDER HOOKS
+//  Hook lấy danh sách tài khoản chờ duyệt
+export function usePendingApprovals() {
+  return useQuery({
+    queryKey: ["commander", "pending"],
+    queryFn: async () => {
+      const res = await apiRequest<ApiResponse<UserWithPendingCheck[]>>({
+        method: "GET",
+        url: apiRouteBuilders.commander.approvals.pending,
+      });
+      return res.data ?? [];
+    },
+    refetchInterval: 30000,
+  });
+}
+
+//  Hook lấy danh sách toàn bộ tài khoản (có hỗ trợ Filter)
+export function useSystemUsers(params?: { search?: string; role?: string }) {
+  return useQuery({
+    queryKey: ["commander", "users", params],
+    queryFn: async () => {
+      const res = await apiRequest<ApiResponse<UserWithPendingCheck[]>>({
+        method: "GET",
+        url: apiRouteBuilders.commander.users.list,
+        params,
+      });
+      return res.data ?? [];
+    },
+  });
+}
+
+// Hook Duyệt tài khoản
+export function useApproveUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) =>
+      apiRequest({
+        method: "POST",
+        url: apiRouteBuilders.commander.approvals.approve(userId),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["commander"] });
+    },
+  });
+}
+
+// Hook Từ chối tài khoản
+export function useRejectUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) =>
+      apiRequest({
+        method: "POST",
+        url: apiRouteBuilders.commander.approvals.reject(userId),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["commander"] });
+    },
+  });
+}
+
+// 5. Hook Khóa / Mở khóa tài khoản
+export function useToggleUserStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
+      apiRequest({
+        method: "PUT",
+        url: apiRouteBuilders.commander.users.toggleStatus(userId),
+        data: { isActive },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["commander", "users"] });
+    },
+  });
+}
+
+export function useCreateRescueTeam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      teamName,
+      description,
+      teamLeaderId,
+      baseLocationId,
+      memberIds,
+    }: {
+      teamName: string;
+      description: string;
+      teamLeaderId: string;
+      baseLocationId: string;
+      memberIds: string[];
+    }) => {
+      const response = await rescueTeamsApi.create({
+        teamName,
+        teamLeaderId,
+        description,
+        baseLocationId,
+        memberIds,
+      });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rescue-teams"] });
+    },
+  });
+}
+export function useDeleteRescueTeam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (teamId: string) => rescueTeamsApi.delete(teamId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rescue-teams"] });
+    },
+  });
+}
+
+export function useAddTeamMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ teamId, memberId }: { teamId: string; memberId: string }) =>
+      apiRequest({
+        method: "POST",
+        url: `/api/RescueTeam/${teamId}/member/${memberId}`,
+      }),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["rescue-teams"] });
+      qc.invalidateQueries({
+        queryKey: ["rescue-teams", variables.teamId, "members"],
+      });
+    },
+  });
+}
+
+export function useRemoveTeamMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ teamId, memberId }: { teamId: string; memberId: string }) =>
+      apiRequest({
+        method: "DELETE",
+        url: `/api/RescueTeam/${teamId}/member/${memberId}`,
+      }),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["rescue-teams"] });
+      qc.invalidateQueries({
+        queryKey: ["rescue-teams", variables.teamId, "members"],
+      });
+    },
+  });
 }

@@ -119,7 +119,7 @@ export function useRescueTeamsQuery() {
         .filter((t) => !!t)
         .map((t: RescueTeamSummary) => ({
           ...t,
-          name: t.name ?? "Đội không tên",
+          name: t.teamName ?? "Đội không tên",
           status:
             typeof t.status === "number"
               ? (numericTeamStatusMap[t.status] ?? "UNAVAILABLE")

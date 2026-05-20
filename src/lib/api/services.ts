@@ -27,11 +27,13 @@ import type {
   RequestSummary,
   RescueTeamSummary,
   RoleSummary,
+  TeamMemberDTO,
   TeamMemberSummary,
   UpdateMissionStatusInput,
   UpdateProfileRequest,
   UpdateRequestInput,
   UploadAvatarResponse,
+  UserWithPendingCheck,
 } from "./types";
 
 import { toBackendPagination } from "./pagination";
@@ -355,14 +357,14 @@ export const rescueTeamsApi = {
       url: apiRouteBuilders.rescueTeams.status(teamId, newStatus),
     });
   },
-  remove(teamId: string) {
+  delete(teamId: string) {
     return apiRequest<ApiResponse<null>>({
       method: "DELETE",
       url: apiRouteBuilders.rescueTeams.byId(teamId),
     });
   },
   members(teamId: string) {
-    return apiRequest<ApiResponse<TeamMemberSummary[]>>({
+    return apiRequest<ApiResponse<TeamMemberDTO[]>>({
       method: "GET",
       url: apiRouteBuilders.rescueTeams.members(teamId),
     });
@@ -589,6 +591,47 @@ export const rolesApi = {
     return apiRequest<ApiResponse<null>>({
       method: "DELETE",
       url: apiRouteBuilders.roles.byId(roleId),
+    });
+  },
+};
+
+export const commanderApi = {
+  getPendingApprovals() {
+    return apiRequest<ApiResponse<UserWithPendingCheck[]>>({
+      method: "GET",
+      url: apiRouteBuilders.commander.approvals.pending,
+    });
+  },
+
+  getSystemAccounts(params?: { search?: string; role?: string }) {
+    return apiRequest({
+      method: "GET",
+      url: apiRouteBuilders.commander.users.list,
+      params,
+    });
+  },
+
+  approveAccount(userId: string) {
+    return apiRequest({
+      method: "POST",
+      url: apiRouteBuilders.commander.approvals.approve(userId),
+    });
+  },
+
+  // Từ chối tài khoản
+  rejectAccount(userId: string) {
+    return apiRequest({
+      method: "POST",
+      url: apiRouteBuilders.commander.approvals.reject(userId),
+    });
+  },
+
+  // Khóa/Mở khóa tài khoản
+  toggleAccountStatus(userId: string, isActive: boolean) {
+    return apiRequest({
+      method: "PUT",
+      url: apiRouteBuilders.commander.users.toggleStatus(userId),
+      data: { isActive },
     });
   },
 };

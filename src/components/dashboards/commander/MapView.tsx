@@ -76,7 +76,6 @@ const HIGHLIGHTED_ICON = L.divIcon({
   iconAnchor: [16, 16],
 });
 
-// Component để fly đến marker khi selected
 function MapController({
   selectedTeamId,
   teams,
@@ -85,11 +84,19 @@ function MapController({
   teams: RescueTeamSummary[];
 }) {
   const map = useMap();
+  const lastFlownTeamIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (selectedTeamId && teams.length > 0) {
+    if (!selectedTeamId || selectedTeamId === lastFlownTeamIdRef.current) {
+      return;
+    }
+
+    if (teams.length > 0) {
       const selectedTeam = teams.find((t) => t.id === selectedTeamId);
       if (selectedTeam?.baseLocation) {
+        lastFlownTeamIdRef.current = selectedTeamId;
+
+        map.invalidateSize();
         map.flyTo(
           [
             selectedTeam.baseLocation.latitude,
@@ -101,6 +108,12 @@ function MapController({
       }
     }
   }, [selectedTeamId, teams, map]);
+
+  useEffect(() => {
+    if (!selectedTeamId) {
+      lastFlownTeamIdRef.current = undefined;
+    }
+  }, [selectedTeamId]);
 
   return null;
 }
@@ -114,7 +127,6 @@ export default function MapView({
 }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null);
 
-  // STATE MỚI: Quản lý layer bản đồ giống CitizenMap
   const [layerIndex, setLayerIndex] = useState(0);
 
   const {
@@ -125,6 +137,16 @@ export default function MapView({
     status: statusFilter === "ALL" ? undefined : statusFilter,
   });
 
+  useEffect(() => {
+    if (mapRef.current) {
+      // Đợi một khoảng thời gian cực ngắn (100ms-200ms) để CSS Animation của ActionPanel chạy xong
+      const timer = setTimeout(() => {
+        mapRef.current?.invalidateSize();
+      }, 250);
+
+      return () => clearTimeout(timer);
+    }
+  }, [selectedTeamId, teams]);
   const handleMarkerClick = (teamId: string) => {
     if (onSelectTeam) onSelectTeam(teamId);
   };

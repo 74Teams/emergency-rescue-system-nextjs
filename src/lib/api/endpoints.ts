@@ -13,6 +13,7 @@ export const apiRoutes = {
     refresh: "/auth/refresh",
   },
   users: "/users",
+  commander: "commander",
   locations: "Location",
   requests: "/requests",
   rescueTeams: "/RescueTeam",
@@ -61,5 +62,19 @@ export const apiRouteBuilders = {
   },
   roles: {
     byId: (roleId: string) => `${apiRoutes.roles}/${roleId}`,
+  },
+  commander: {
+    approvals: {
+      pending: `${apiRoutes.commander}/approvals/pending`,
+      rejected: `${apiRoutes.commander}/approvals/rejected`,
+      approve: (userId: string) => `${apiRoutes.commander}/approvals/${userId}`,
+      reject: (userId: string) =>
+        `${apiRoutes.commander}/approvals/${userId}/reject`,
+    },
+    users: {
+      list: `${apiRoutes.commander}/users`,
+      toggleStatus: (userId: string) =>
+        `${apiRoutes.commander}/users/${userId}/status`,
+    },
   },
 } as const;

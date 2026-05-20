@@ -303,9 +303,9 @@ export default function RescueTeamsList({
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header với Search và Refresh */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-white z-10">
         <div className="flex items-center gap-2 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -335,7 +335,7 @@ export default function RescueTeamsList({
       </div>
 
       {/* Team List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 bg-slate-50/50">
         {filteredTeams.map((team) => (
           <TeamCard
             key={team.id}
@@ -349,7 +349,7 @@ export default function RescueTeamsList({
       </div>
 
       {/* Footer với count */}
-      <div className="p-3 border-t border-slate-200 dark:border-slate-800 text-sm text-slate-500 dark:text-slate-500">
+      <div className="p-3 border-t border-slate-200 dark:border-slate-800 text-sm text-slate-500 dark:text-slate-500 shrink-0 bg-white">
         Hiển thị {filteredTeams.length} / {teams.length} đội cứu hộ
       </div>
     </div>
