@@ -27,7 +27,7 @@ import type {
   RequestSummary,
   RescueTeamSummary,
   RoleSummary,
-  TeamMemberDTO,
+  RescueTeamMemberDTO,
   TeamMemberSummary,
   UpdateMissionStatusInput,
   UpdateProfileRequest,
@@ -364,7 +364,7 @@ export const rescueTeamsApi = {
     });
   },
   members(teamId: string) {
-    return apiRequest<ApiResponse<TeamMemberDTO[]>>({
+    return apiRequest<ApiResponse<RescueTeamMemberDTO[]>>({
       method: "GET",
       url: apiRouteBuilders.rescueTeams.members(teamId),
     });

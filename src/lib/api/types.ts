@@ -394,7 +394,7 @@ export interface UserWithPendingCheck extends ProfileResponse {
 }
 
 //TeamMemberDTO
-export interface TeamMemberDTO {
+export interface RescueTeamMemberDTO {
   id: string;
   fullName: string;
   email: string;

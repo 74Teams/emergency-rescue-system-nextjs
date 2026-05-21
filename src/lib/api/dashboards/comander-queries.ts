@@ -293,7 +293,7 @@ export function useAddTeamMember() {
     mutationFn: ({ teamId, memberId }: { teamId: string; memberId: string }) =>
       apiRequest({
         method: "POST",
-        url: `/api/RescueTeam/${teamId}/member/${memberId}`,
+        url: apiRouteBuilders.rescueTeams.member(teamId, memberId),
       }),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["rescue-teams"] });
@@ -310,7 +310,7 @@ export function useRemoveTeamMember() {
     mutationFn: ({ teamId, memberId }: { teamId: string; memberId: string }) =>
       apiRequest({
         method: "DELETE",
-        url: `/api/RescueTeam/${teamId}/member/${memberId}`,
+        url: apiRouteBuilders.rescueTeams.member(teamId, memberId),
       }),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["rescue-teams"] });

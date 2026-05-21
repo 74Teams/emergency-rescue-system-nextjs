@@ -106,10 +106,16 @@ import {
   useAddTeamMember,
   useRemoveTeamMember,
 } from "@/lib/api/dashboards/comander-queries";
-import { ApiRole, RescueTeamSummary, TeamMemberDTO } from "@/lib/api/types";
+import {
+  ApiRole,
+  RescueTeamSummary,
+  RescueTeamMemberDTO,
+} from "@/lib/api/types";
 import { TEAM_STATUS_BADGES, ROLE_BADGES } from "@/types/dashboards/commander";
+import { useRouter } from "next/navigation";
 
 export default function CommandCenter() {
+  const router = useRouter();
   // === STATES ĐIỀU HƯỚNG ===
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -849,11 +855,10 @@ export default function CommandCenter() {
               {activeTab === "teams" && (
                 <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex justify-end mb-6">
-                    {/* === SỬA HÀNH ĐỘNG NÚT THÀNH LẬP ĐỘI MỚI VỀ ROUTE MỚI === */}
                     <Button
                       className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 font-bold"
                       onClick={() => {
-                        /* TODO: navigate to create team */
+                        router.push("/commander/teams/create");
                       }}
                     >
                       <Plus className="mr-2 h-4 w-4" /> Thành lập Đội Mới
@@ -949,7 +954,11 @@ export default function CommandCenter() {
                               <Button
                                 variant="outline"
                                 className="w-full bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border-slate-200 font-bold shadow-sm transition-all h-11"
-                                onClick={() => setSelectedTeamId(team.id)}
+                                onClick={() =>
+                                  router.push(
+                                    `/commander/teams/${team.id}/manage`,
+                                  )
+                                }
                               >
                                 Quản lý Đội hình & Nhân sự
                               </Button>
@@ -1114,7 +1123,7 @@ export default function CommandCenter() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        teamMembers?.map((member: TeamMemberDTO) => (
+                        teamMembers?.map((member: RescueTeamMemberDTO) => (
                           <TableRow
                             key={member.id}
                             className="hover:bg-blue-50/30 transition-colors group"
