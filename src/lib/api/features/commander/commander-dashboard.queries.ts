@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { rescueTeamsApi } from "../services";
-import { commanderApi } from "../services";
+import { rescueTeamsApi } from "../../services";
+import { commanderApi } from "../../services";
 import type {
   ApiResponse,
   RescueTeamSummary,
@@ -8,10 +8,10 @@ import type {
   RescueTeamQueryParams,
   AccountQueryParams,
   UserWithPendingCheck,
-} from "../types";
-import { apiQueryKeys } from "../query-keys";
-import { apiRequest } from "../client";
-import { apiRouteBuilders } from "../endpoints";
+} from "../../types";
+import { apiQueryKeys } from "../../query-keys";
+import { apiRequest } from "../../client";
+import { apiRouteBuilders } from "../../endpoints";
 
 type RescueTeamsResponse = ApiResponse<RescueTeamSummary[]>;
 
@@ -65,7 +65,7 @@ type RescueTeamsResponse = ApiResponse<RescueTeamSummary[]>;
 export function useRescueTeams(params?: {
   status?: TeamStatus | "ALL" | string;
 }) {
-  const queryParams = params?.status === "ALL" ? undefined : params;
+  const queryParams = params?.status === "ALL" ? undefined : (params as RescueTeamQueryParams);
   return useQuery({
     queryKey: apiQueryKeys.rescueTeams.list(queryParams),
     queryFn: async () => {

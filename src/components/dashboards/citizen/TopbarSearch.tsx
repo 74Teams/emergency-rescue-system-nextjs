@@ -3,7 +3,7 @@
 import FlyToLocationButton from "@/components/shared/FlyToLocationButton";
 import { Input } from "@/components/ui/input";
 import { dictType } from "@/constants/dictionary";
-import { useCitizenRequestsQuery } from "@/lib/api/dashboards/citizen-requests";
+import { useCitizenRequestsQuery } from "@/lib/api/features/requests/citizen.queries";
 import type { RequestDetail } from "@/types/request";
 import { AlertTriangle, MapPin, Search, User } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";

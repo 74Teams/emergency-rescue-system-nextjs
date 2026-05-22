@@ -18,10 +18,16 @@ export function isPublicPath(pathname: string): boolean {
   if (pathname.startsWith("/sos")) return true;
   if (pathname.startsWith("/login")) return true;
   if (pathname.startsWith("/register")) return true;
+  if (pathname.startsWith("/forgot-password")) return true;
   return false;
 }
 
-/** If path requires staff login, returns allowed roles; otherwise null */
+export function isAuthRequiredPath(pathname: string): boolean {
+  if (isPublicPath(pathname)) return false;
+  // All non-public paths require authentication
+  return true;
+}
+
 export function getProtectedRoles(pathname: string): StaffRole[] | null {
   if (pathname.startsWith("/commander")) return COMMANDER_ROLES;
   if (pathname.startsWith("/dispatcher")) return DISPATCHER_ROLES;

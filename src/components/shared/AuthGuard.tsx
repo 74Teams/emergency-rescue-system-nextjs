@@ -4,6 +4,7 @@ import { getStoredAccessToken, getStoredUser } from "@/lib/api/storage";
 import {
   canAccessPath,
   getProtectedRoles,
+  isAuthRequiredPath,
   isPublicPath,
 } from "@/lib/auth/route-access";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,34 +16,36 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
+    // 1. Public paths → always allowed
     if (isPublicPath(pathname)) {
-      //CHECK: WTF?
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAllowed(true);
       return;
     }
 
-    const requiredRoles = getProtectedRoles(pathname);
-    if (!requiredRoles) {
+    // 2. All non-public paths require authentication
+    if (isAuthRequiredPath(pathname)) {
+      const token = getStoredAccessToken();
+      const user = getStoredUser();
+
+      if (!token || !user) {
+        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+        setAllowed(false);
+        return;
+      }
+
+      // 3. Role-protected paths → additionally check user roles
+      const requiredRoles = getProtectedRoles(pathname);
+      if (requiredRoles && !canAccessPath(pathname, user.roles)) {
+        router.replace("/");
+        setAllowed(false);
+        return;
+      }
+
       setAllowed(true);
       return;
     }
 
-    const token = getStoredAccessToken();
-    const user = getStoredUser();
-
-    if (!token || !user) {
-      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
-      setAllowed(false);
-      return;
-    }
-
-    if (!canAccessPath(pathname, user.roles)) {
-      router.replace("/");
-      setAllowed(false);
-      return;
-    }
-
+    // Fallback: allow (should not reach here)
     setAllowed(true);
   }, [pathname, router]);
 
@@ -58,3 +61,4 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
+

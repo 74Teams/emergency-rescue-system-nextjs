@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchRescuerDashboardData } from "@/lib/api/dashboards/rescuer-dashboard";
+import { fetchRescuerDashboardData } from "@/lib/api/features/missions/rescuer-dashboard.queries";
 import { apiQueryKeys } from "@/lib/api/query-keys";
 import { getStoredAccessToken } from "@/lib/api/storage";
 

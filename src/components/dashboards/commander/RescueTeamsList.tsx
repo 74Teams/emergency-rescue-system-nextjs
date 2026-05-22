@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import StatusFilter from "./StatusFilter";
 import TeamCard from "./TeamCard";
-import { useRescueTeams } from "@/lib/api/dashboards/comander-queries";
+import { useRescueTeams } from "@/lib/api/features/commander/commander-dashboard.queries";
 import type { TeamStatus, RescueTeamSummary } from "@/lib/api/types";
 import { Search, RefreshCw, AlertCircle } from "lucide-react";
 

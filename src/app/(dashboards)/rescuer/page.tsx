@@ -47,7 +47,7 @@ import { UserAccountMenu } from "@/components/shared/UserAccountMenu";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { useRescuerDashboard } from "@/hooks/dashboards/use-rescuer-dashboard";
 import { getApiErrorMessage } from "@/lib/api/client";
-import { useUpdateRescuerMissionStatusMutation } from "@/lib/api/dashboards/rescuer-mutations";
+import { useUpdateRescuerMissionStatusMutation } from "@/lib/api/features/missions/rescuer.mutations";
 import { apiQueryKeys } from "@/lib/api/query-keys";
 import { useLogout } from "@/lib/api/use-auth";
 import { cn } from "@/lib/utils";

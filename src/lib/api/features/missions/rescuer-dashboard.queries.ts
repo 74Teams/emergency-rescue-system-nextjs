@@ -3,15 +3,15 @@ import type {
   RescuerDashboardData,
 } from "@/types/dashboards/rescuer";
 import type { RequestPriority } from "@/types/request";
-import { authApi, requestsApi, rescueTeamsApi } from "../services";
-import { getStoredUser } from "../storage";
+import { authApi, requestsApi, rescueTeamsApi } from "../../services";
+import { getStoredUser } from "../../storage";
 import type {
   MissionStatus,
   PriorityLevel,
   ProfileResponse,
   RequestSummary,
-} from "../types";
-import { normalizeMission, normalizeRequest } from "./dispatcher-queries";
+} from "../../types";
+import { normalizeMission, normalizeRequest } from "../requests/dispatcher.queries";
 
 const numericPriorityToRequest: Record<number, RequestPriority> = {
   1: "CRITICAL",

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getApiErrorMessage } from "@/lib/api/client";
-import { useCreateCitizenRequestMutation } from "@/lib/api/dashboards/citizen-requests";
+import { useCreateCitizenRequestMutation } from "@/lib/api/features/requests/citizen.queries";
 import type { EmergencyCategory, RequestPriority } from "@/types/request";
 
 import {

@@ -28,7 +28,7 @@ import {
   useUpdateTeamStatus,
   useRescueTeamDetail,
   useTeamMissions,
-} from "@/lib/api/dashboards/comander-queries";
+} from "@/lib/api/features/commander/commander-dashboard.queries";
 import {
   Clock,
   MapPin,

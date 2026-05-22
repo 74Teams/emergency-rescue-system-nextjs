@@ -34,7 +34,7 @@ import {
   useChangeRequestStatusMutation,
   useCreateMissionMutation,
   useTeamMembersQuery,
-} from "@/lib/api/dashboards/dispatcher-queries";
+} from "@/lib/api/features/requests/dispatcher.queries";
 import type { RequestSummary, RescueTeamSummary } from "@/lib/api/types";
 import { useProfileQuery } from "@/lib/api/use-profile";
 import {
@@ -427,7 +427,7 @@ export function RequestsTable({
                               </div>
                               <div className="flex flex-col text-left">
                                 <span className="font-bold text-slate-800 text-sm">
-                                  {team.name}
+                                  {team.teamName}
                                 </span>
                                 <span className="text-[10px] text-slate-500 font-medium">
                                   ID: {team.id.substring(0, 8).toUpperCase()}

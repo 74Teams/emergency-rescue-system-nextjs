@@ -49,7 +49,7 @@ import {
   EMERGENCY_TYPE_OPTIONS,
   PRIORITY_OPTIONS,
   useCreateCitizenRequestMutation,
-} from "@/lib/api/dashboards/citizen-requests";
+} from "@/lib/api/features/requests/citizen.queries";
 import CitizenRequestDetailDialog from "@/components/dashboards/citizen/CitizenRequestDetailDialog";
 
 import { OsmAddressResult, RequestDetail } from "@/types/request";

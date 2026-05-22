@@ -1,7 +1,0 @@
-1.4 BE: Logout chưa có
-Triệu chứng: POST /api/Auth/logout comment trong AuthController.
-Phải thêm: Handler revoke refresh token + FE gọi trước clearStoredAuthSession.
-Ưu tiên: Trung bình (có thể để sau demo).
-
-
-

@@ -111,9 +111,7 @@ export function getApiErrorMessage(error: unknown) {
       typeof data.errors === "object" &&
       !Array.isArray(data.errors)
     ) {
-      const messages = Object.values(
-        data.errors as Record<string, string[]>,
-      )
+      const messages = Object.values(data.errors as Record<string, string[]>)
         .flat()
         .filter(Boolean);
       if (messages.length) return messages.join(". ");

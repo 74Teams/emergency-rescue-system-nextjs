@@ -1,5 +1,6 @@
 import TopbarSearch from "@/components/dashboards/citizen/TopbarSearch";
 import { CitizenHeaderActions } from "@/components/dashboards/citizen/CitizenHeaderActions";
+import { CitizenSidebar } from "@/components/dashboards/citizen/CitizenSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Activity } from "lucide-react";
 
@@ -48,6 +49,7 @@ export default function CitizenLayout({
           <CitizenHeaderActions />
         </header>
         <div className="flex flex-1 overflow-hidden relative z-10">
+          <CitizenSidebar />
           <main className="flex-1 relative h-full">{children}</main>
         </div>
       </div>

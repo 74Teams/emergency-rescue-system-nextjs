@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTeamMembersQuery } from "@/lib/api/dashboards/dispatcher-queries";
+import { useTeamMembersQuery } from "@/lib/api/features/requests/dispatcher.queries";
 import type { RescueTeamSummary, TeamMemberSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
@@ -109,11 +109,11 @@ function TeamListView({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="size-10 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-xl flex items-center justify-center font-black text-sm shadow-sm">
-                      {(team.name ?? "??").substring(0, 2).toUpperCase()}
+                      {(team.teamName ?? "??").substring(0, 2).toUpperCase()}
                     </div>
                     <div>
                       <h4 className="font-bold text-sm text-slate-900">
-                        {team.name}
+                        {team.teamName}
                       </h4>
                       {team.leader && (
                         <p className="text-[11px] text-slate-500">
@@ -184,10 +184,10 @@ function TeamDetailView({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="size-14 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-2xl flex items-center justify-center font-black text-lg shadow-md">
-                {(team.name ?? "??").substring(0, 2).toUpperCase()}
+                {(team.teamName ?? "??").substring(0, 2).toUpperCase()}
               </div>
               <div>
-                <CardTitle className="text-lg">{team.name}</CardTitle>
+                <CardTitle className="text-lg">{team.teamName}</CardTitle>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {team.description || "Chưa có mô tả"}
                 </p>
@@ -294,7 +294,7 @@ function TeamDetailView({
           {!membersQuery.isLoading && members.length > 0 && (
             <ScrollArea className="max-h-[calc(100vh-540px)]">
               <div className="flex flex-col gap-2">
-                {members.map((member: TeamMemberSummary) => {
+                {members.map((member: any) => {
                   // Support both flat DTO and nested { user: {...} } shape
                   const user = member.user ?? member;
                   const fullName =

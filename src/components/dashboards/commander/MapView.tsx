@@ -6,7 +6,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import type { RescueTeamSummary, TeamStatus } from "@/lib/api/types";
-import { useRescueTeams } from "@/lib/api/dashboards/comander-queries";
+import { useRescueTeams } from "@/lib/api/features/commander/commander-dashboard.queries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 

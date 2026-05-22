@@ -5,6 +5,3 @@ export * from "./query-keys";
 export * from "./services";
 export * from "./storage";
 export * from "./types";
-export * from "./dashboards/citizen-requests";
-export * from "./dashboards/dispatcher-queries";
-export * from "./dashboards/rescuer-dashboard";

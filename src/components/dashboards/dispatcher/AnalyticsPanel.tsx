@@ -8,7 +8,7 @@ import {
   BarChart3, PieChart, TrendingUp, Clock, CheckCircle, XCircle,
   AlertTriangle, Flame, Droplets, Stethoscope, Mountain, Car, Building2, HelpCircle, Globe,
 } from "lucide-react";
-import { emergencyTypeLabels, priorityLabels, statusLabels, missionStatusLabels } from "@/lib/api/dashboards/dispatcher-queries";
+import { emergencyTypeLabels, priorityLabels, statusLabels, missionStatusLabels } from "@/lib/api/features/requests/dispatcher.queries";
 import type { RequestSummary, MissionSummary, RescueTeamSummary } from "@/lib/api/types";
 
 interface Props {

@@ -10,7 +10,7 @@ import {
   useDispatcherRequestsQuery,
   useRescueTeamsQuery,
   useMissionsQuery,
-} from "@/lib/api/dashboards/dispatcher-queries";
+} from "@/lib/api/features/requests/dispatcher.queries";
 import { DispatcherSidebar, type DispatcherView } from "@/components/dashboards/dispatcher/DispatcherSidebar";
 import { DispatcherOverview } from "@/components/dashboards/dispatcher/DispatcherOverview";
 import { RequestsTable } from "@/components/dashboards/dispatcher/RequestsTable";

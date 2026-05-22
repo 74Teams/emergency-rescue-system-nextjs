@@ -105,7 +105,7 @@ import {
   useRescueTeamMembers,
   useAddTeamMember,
   useRemoveTeamMember,
-} from "@/lib/api/dashboards/comander-queries";
+} from "@/lib/api/features/commander/commander-dashboard.queries";
 import {
   ApiRole,
   RescueTeamSummary,
