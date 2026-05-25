@@ -1,7 +1,5 @@
-export default function RescuerDashboardLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return <>{children}</>;
+export default function RescuerLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">{children}</div>
+  );
 }

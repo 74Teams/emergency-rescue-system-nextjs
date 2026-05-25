@@ -266,20 +266,43 @@ export function CitizenRequestDetailDialog({ request, open, onOpenChange }: Citi
               </div>
             </div>
 
-            {/* Reporter info (hidden in public view) */}
-            {!request.isPublicView ? (
-              <div className="flex flex-col gap-1.5">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Người báo cáo</p>
-                <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 grid grid-cols-2 gap-3">
-                  <InfoRow label="Họ tên" icon={<User className="size-3.5" />} value={request.requestedBy?.fullName ?? "N/A"} />
-                  <InfoRow label="Số điện thoại" icon={<Phone className="size-3.5" />} value={request.requestedBy?.phoneNumber ?? "N/A"} />
-                </div>
+            {/* Reporter info */}
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Người báo cáo</p>
+              <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 grid grid-cols-2 gap-3">
+                <InfoRow 
+                  label="Họ tên" 
+                  icon={<User className="size-3.5" />} 
+                  value={
+                    request.requestedBy?.fullName
+                      ? request.isPublicView 
+                        ? (request.requestedBy.fullName.length > 3 
+                            ? `${request.requestedBy.fullName.slice(0, 2)}***${request.requestedBy.fullName.slice(-2)}` 
+                            : '***')
+                        : request.requestedBy.fullName
+                      : "N/A"
+                  } 
+                />
+                <InfoRow 
+                  label="Số điện thoại" 
+                  icon={<Phone className="size-3.5" />} 
+                  value={
+                    request.requestedBy?.phoneNumber 
+                      ? request.isPublicView
+                        ? (request.requestedBy.phoneNumber.length >= 7 
+                            ? `${request.requestedBy.phoneNumber.slice(0, 3)}***${request.requestedBy.phoneNumber.slice(-3)}` 
+                            : '***')
+                        : request.requestedBy.phoneNumber
+                      : "N/A"
+                  } 
+                />
               </div>
-            ) : (
-              <p className="text-xs text-slate-400 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 italic">
-                Thông tin cá nhân không hiển thị trên bản đồ công khai.
-              </p>
-            )}
+              {request.isPublicView && (
+                <p className="text-[10px] text-slate-400 italic mt-1">
+                  * Thông tin cá nhân đã được ẩn một phần để bảo mật trên bản đồ công khai.
+                </p>
+              )}
+            </div>
 
             {/* Time */}
             <InfoRow

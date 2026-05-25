@@ -1,0 +1,4 @@
+.next/types/validator.ts(183,39): error TS2307: Cannot find module '../../src/app/(dashboards)/rescuer/layout.js' or its corresponding type declarations.
+src/components/dashboards/rescuer/RequestsPanel.tsx(122,47): error TS18047: 'request.location' is possibly 'null'.
+src/components/dashboards/rescuer/RequestsPanel.tsx(122,79): error TS18047: 'request.location' is possibly 'null'.
+src/components/dashboards/rescuer/RequestsPanel.tsx(223,82): error TS2367: This comparison appears to be unintentional because the types 'RequestStatus' and '"RESOLVED"' have no overlap.

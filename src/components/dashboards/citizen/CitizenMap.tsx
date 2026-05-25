@@ -39,16 +39,91 @@ const shadcnIcon = new L.DivIcon({
   popupAnchor: [0, -32],
 });
 
-const rescuePinIcon = new L.DivIcon({
-  className: "bg-transparent border-none",
-  html: `
-    <div class="relative flex items-center justify-center w-6 h-6">
-      <span class="absolute inline-flex w-full h-full bg-red-500 rounded-full opacity-75 animate-ping"></span>
-      <div class="relative w-3 h-3 bg-red-600 rounded-full border-2 border-white shadow-sm"></div>
-    </div>
-  `,
-  iconSize: [24, 24],
-});
+const rescuePinIcons: Record<string, L.DivIcon> = {
+  PENDING: new L.DivIcon({
+    className: "bg-transparent border-none",
+    html: `
+      <div class="relative flex items-center justify-center w-6 h-6">
+        <span class="absolute inline-flex w-full h-full bg-amber-500 rounded-full opacity-75 animate-ping"></span>
+        <div class="relative w-3 h-3 bg-amber-600 rounded-full border-2 border-white shadow-sm"></div>
+      </div>
+    `,
+    iconSize: [24, 24],
+  }),
+  IN_PROGRESS: new L.DivIcon({
+    className: "bg-transparent border-none",
+    html: `
+      <div class="relative flex items-center justify-center w-6 h-6">
+        <span class="absolute inline-flex w-full h-full bg-blue-500 rounded-full opacity-75 animate-ping"></span>
+        <div class="relative w-3 h-3 bg-blue-600 rounded-full border-2 border-white shadow-sm"></div>
+      </div>
+    `,
+    iconSize: [24, 24],
+  }),
+  RESOLVED: new L.DivIcon({
+    className: "bg-transparent border-none",
+    html: `
+      <div class="relative flex items-center justify-center w-6 h-6">
+        <div class="relative w-3 h-3 bg-emerald-600 rounded-full border-2 border-white shadow-sm"></div>
+      </div>
+    `,
+    iconSize: [24, 24],
+  }),
+  CLOSED: new L.DivIcon({
+    className: "bg-transparent border-none",
+    html: `
+      <div class="relative flex items-center justify-center w-6 h-6">
+        <div class="relative w-3 h-3 bg-slate-500 rounded-full border-2 border-white shadow-sm"></div>
+      </div>
+    `,
+    iconSize: [24, 24],
+  }),
+  DEFAULT: new L.DivIcon({
+    className: "bg-transparent border-none",
+    html: `
+      <div class="relative flex items-center justify-center w-6 h-6">
+        <span class="absolute inline-flex w-full h-full bg-red-500 rounded-full opacity-75 animate-ping"></span>
+        <div class="relative w-3 h-3 bg-red-600 rounded-full border-2 border-white shadow-sm"></div>
+      </div>
+    `,
+    iconSize: [24, 24],
+  }),
+};
+
+function getPopupHeaderConfig(status: string) {
+  const cfg: Record<string, { headerBg: string; text: string; dot: string; ping: string | null }> = {
+    PENDING: {
+      headerBg: "bg-amber-50/50 border-amber-100/50",
+      text: "text-amber-600",
+      dot: "bg-amber-600",
+      ping: "bg-amber-400",
+    },
+    IN_PROGRESS: {
+      headerBg: "bg-blue-50/50 border-blue-100/50",
+      text: "text-blue-600",
+      dot: "bg-blue-600",
+      ping: "bg-blue-400",
+    },
+    RESOLVED: {
+      headerBg: "bg-emerald-50/50 border-emerald-100/50",
+      text: "text-emerald-600",
+      dot: "bg-emerald-600",
+      ping: null,
+    },
+    CLOSED: {
+      headerBg: "bg-slate-50/50 border-slate-100/50",
+      text: "text-slate-500",
+      dot: "bg-slate-500",
+      ping: null,
+    },
+  };
+  return cfg[status] ?? {
+    headerBg: "bg-red-50/50 border-red-100/50",
+    text: "text-red-600",
+    dot: "bg-red-600",
+    ping: "bg-red-400",
+  };
+}
 
 function MapSearchControl({
   onSelectLocation,
@@ -289,63 +364,68 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
           />
 
           {requests &&
-            requests.map((request) => (
-              <Marker
-                key={request.id}
-                position={[
-                  request.location?.latitude || 16.0544,
-                  request.location?.longitude || 108.2022,
-                ]}
-                icon={rescuePinIcon}
-              >
-                <Popup className="shadcn-popup">
-                  <div className="flex flex-col w-[200px] bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-                    <div className="bg-red-50/50 px-3 py-2 border-b border-red-100/50 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-                        </span>
-                        <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
-                          {dictPriority[request.priority] || request.priority}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        ID-{request.id?.substring(0, 4)}
-                      </span>
-                    </div>
-
-                    <div className="p-3 space-y-3">
-                      <div>
-                        <h4 className="font-extrabold text-slate-900 text-base leading-none">
-                          {dictType[request.emergencyType] ||
-                            request.emergencyType}
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                          {dictStatus[request.status] || request.status}
-                          {" · "}
-                          {request.location?.address
-                            ? request.location.address
-                                .split(",")
-                                .slice(0, 2)
-                                .join(",")
-                            : "Đang cập nhật vị trí"}
-                        </p>
-                      </div>
-
-                      <RequestDetailDialog request={request}>
-                        <button className="w-full cursor-pointer group relative flex items-center justify-center gap-2 bg-[#003da5] hover:bg-blue-700 text-white text-[11px] font-bold py-2.5 rounded-xl transition-all duration-300 active:scale-95 overflow-hidden">
-                          <span className="relative z-10">
-                            Xem chi tiết báo cáo
+            requests.map((request) => {
+              const cfg = getPopupHeaderConfig(request.status);
+              return (
+                <Marker
+                  key={request.id}
+                  position={[
+                    request.location?.latitude || 16.0544,
+                    request.location?.longitude || 108.2022,
+                  ]}
+                  icon={rescuePinIcons[request.status] ?? rescuePinIcons.DEFAULT}
+                >
+                  <Popup className="shadcn-popup">
+                    <div className="flex flex-col w-[200px] bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+                      <div className={cn("px-3 py-2 border-b flex items-center justify-between", cfg.headerBg)}>
+                        <div className="flex items-center gap-1.5">
+                          <span className="relative flex h-2 w-2">
+                            {cfg.ping && (
+                              <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", cfg.ping)}></span>
+                            )}
+                            <span className={cn("relative inline-flex rounded-full h-2 w-2", cfg.dot)}></span>
                           </span>
-                          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </button>
-                      </RequestDetailDialog>
+                          <span className={cn("text-[10px] font-bold uppercase tracking-wider", cfg.text)}>
+                            {dictPriority[request.priority] || request.priority}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400">
+                          ID-{request.id?.substring(0, 4)}
+                        </span>
+                      </div>
+
+                      <div className="p-3 space-y-3">
+                        <div>
+                          <h4 className="font-extrabold text-slate-900 text-base leading-none">
+                            {dictType[request.emergencyType] ||
+                              request.emergencyType}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                            {dictStatus[request.status] || request.status}
+                            {" · "}
+                            {request.location?.address
+                              ? request.location.address
+                                  .split(",")
+                                  .slice(0, 2)
+                                  .join(",")
+                              : "Đang cập nhật vị trí"}
+                          </p>
+                        </div>
+
+                        <RequestDetailDialog request={request}>
+                          <button className="w-full cursor-pointer group relative flex items-center justify-center gap-2 bg-[#003da5] hover:bg-blue-700 text-white text-[11px] font-bold py-2.5 rounded-xl transition-all duration-300 active:scale-95 overflow-hidden">
+                            <span className="relative z-10">
+                              Xem chi tiết báo cáo
+                            </span>
+                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                        </RequestDetailDialog>
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+                  </Popup>
+                </Marker>
+              );
+            })}
 
           <Marker position={position} icon={shadcnIcon}>
             <Popup className="shadcn-popup">

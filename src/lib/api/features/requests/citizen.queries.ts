@@ -12,6 +12,7 @@ import type {
   RequestSummary,
 } from "../../types";
 import { unwrapEntityId } from "../../unwrap";
+import { getStoredUser } from "../../storage";
 
 import type {
   EmergencyCategory,
@@ -212,9 +213,7 @@ function mapSummaryToRequestDetail(
   const base: RequestDetail = {
     id: request.id,
     userId: publicView ? "" : requester.id,
-    requestedBy: publicView
-      ? redactRequesterForPublicView()
-      : {
+    requestedBy: {
           id: requester.id,
           fullName: requester.fullName,
           phoneNumber: requester.phoneNumber ?? "",
@@ -223,19 +222,15 @@ function mapSummaryToRequestDetail(
     emergencyType: apiEmergencyTypeMap[emergencyType] ?? "OTHER",
     priority: apiPriorityMap[priority] ?? "LOW",
     status: apiStatusMap[status] ?? "PENDING",
-    description: publicView
-      ? CITIZEN_PUBLIC_DESCRIPTION_PLACEHOLDER
-      : (request.description ?? ""),
+    description: request.description ?? "",
     location: {
       id: location.id,
       latitude: location.latitude,
       longitude: location.longitude,
       address: location.address,
-      landmark: publicView ? undefined : location.landmark,
+      landmark: location.landmark,
     },
-    mediaUrl: publicView
-      ? undefined
-      : request.medias?.map((media) => media.mediaUrl),
+    mediaUrl: request.medias?.map((media) => media.mediaUrl),
     submittedTime:
       request.createdAt ?? request.updatedAt ?? new Date().toISOString(),
     missions: (request.missions ?? []).map((mission) =>
@@ -255,11 +250,16 @@ export function useCitizenRequestsQuery() {
     queryKey: apiQueryKeys.requests.citizen({ pageSize: 100 }),
     queryFn: async () => {
       const response = await requestsApi.list({ pageNumber: 1, pageSize: 100 });
+      const currentUser = getStoredUser();
+      const isStaff = currentUser && currentUser.roles.some((role) => role !== "Citizen");
+
       return {
         ...response.data,
-        items: response.data.items.map((item) =>
-          mapSummaryToRequestDetail(item, { publicView: true }),
-        ),
+        items: response.data.items.map((item) => {
+          const isOwner = currentUser && item.requestedBy?.id === currentUser.id;
+          const publicView = !(isStaff || isOwner);
+          return mapSummaryToRequestDetail(item, { publicView });
+        }),
       };
     },
     staleTime: 30_000,

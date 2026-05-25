@@ -49,6 +49,7 @@ import {
   UserCircle,
   Users,
 } from "lucide-react";
+import { UserProfileDialog } from "./UserProfileDialog";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -101,6 +102,7 @@ export function RequestsTable({
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState("");
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
   const { data: profile } = useProfileQuery();
   const createMission = useCreateMissionMutation();
@@ -284,9 +286,18 @@ export function RequestsTable({
                   </TableCell>
                   <TableCell>
                     {/* ĐÃ FIX: Không ẩn số điện thoại, hiển thị đầy đủ */}
-                    <div className="font-bold text-[#003da5] text-xs">
+                    <button
+                      type="button"
+                      className="font-bold text-[#003da5] text-xs hover:underline text-left"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (req.requestedBy?.id) {
+                          setProfileUserId(req.requestedBy.id);
+                        }
+                      }}
+                    >
                       {req.requestedBy?.fullName ?? "Ẩn danh"}
-                    </div>
+                    </button>
                     {req.requestedBy?.phoneNumber ? (
                       <a
                         href={`tel:${req.requestedBy.phoneNumber}`}
@@ -642,6 +653,15 @@ export function RequestsTable({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* USER PROFILE DIALOG */}
+      <UserProfileDialog
+        userId={profileUserId}
+        open={!!profileUserId}
+        onOpenChange={(v) => {
+          if (!v) setProfileUserId(null);
+        }}
+      />
     </>
   );
 }
