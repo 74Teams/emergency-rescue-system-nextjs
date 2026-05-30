@@ -630,7 +630,10 @@ export default function CommandCenter() {
                                             </CardHeader>
                                             <CardContent>
                                                 <div className="text-4xl font-black text-slate-800">
-                                                    4.2<span className="text-xl">p</span>
+                                                    4.2
+                                                    <span className="text-xl">
+                                                        p
+                                                    </span>
                                                 </div>
                                                 <p className="text-xs text-emerald-600 mt-2 flex items-center font-semibold">
                                                     <TrendingDown
@@ -651,7 +654,8 @@ export default function CommandCenter() {
                                                     Biểu đồ hoạt động cứu hộ
                                                 </CardTitle>
                                                 <CardDescription>
-                                                    Thống kê số yêu cầu và hoàn thành trong 7 ngày qua
+                                                    Thống kê số yêu cầu và hoàn
+                                                    thành trong 7 ngày qua
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
@@ -671,24 +675,62 @@ export default function CommandCenter() {
                                                     <BarChart
                                                         accessibilityLayer
                                                         data={[
-                                                            { day: 'T2', requests: 12, resolved: 10 },
-                                                            { day: 'T3', requests: 19, resolved: 15 },
-                                                            { day: 'T4', requests: 15, resolved: 14 },
-                                                            { day: 'T5', requests: 22, resolved: 20 },
-                                                            { day: 'T6', requests: 28, resolved: 25 },
-                                                            { day: 'T7', requests: 35, resolved: 30 },
-                                                            { day: 'CN', requests: 40, resolved: 35 },
+                                                            {
+                                                                day: 'T2',
+                                                                requests: 12,
+                                                                resolved: 10,
+                                                            },
+                                                            {
+                                                                day: 'T3',
+                                                                requests: 19,
+                                                                resolved: 15,
+                                                            },
+                                                            {
+                                                                day: 'T4',
+                                                                requests: 15,
+                                                                resolved: 14,
+                                                            },
+                                                            {
+                                                                day: 'T5',
+                                                                requests: 22,
+                                                                resolved: 20,
+                                                            },
+                                                            {
+                                                                day: 'T6',
+                                                                requests: 28,
+                                                                resolved: 25,
+                                                            },
+                                                            {
+                                                                day: 'T7',
+                                                                requests: 35,
+                                                                resolved: 30,
+                                                            },
+                                                            {
+                                                                day: 'CN',
+                                                                requests: 40,
+                                                                resolved: 35,
+                                                            },
                                                         ]}
                                                     >
-                                                        <CartesianGrid vertical={false} />
+                                                        <CartesianGrid
+                                                            vertical={false}
+                                                        />
                                                         <XAxis
                                                             dataKey="day"
                                                             tickLine={false}
                                                             tickMargin={10}
                                                             axisLine={false}
                                                         />
-                                                        <ChartTooltip content={<ChartTooltipContent />} />
-                                                        <ChartLegend content={<ChartLegendContent />} />
+                                                        <ChartTooltip
+                                                            content={
+                                                                <ChartTooltipContent />
+                                                            }
+                                                        />
+                                                        <ChartLegend
+                                                            content={
+                                                                <ChartLegendContent />
+                                                            }
+                                                        />
                                                         <Bar
                                                             dataKey="requests"
                                                             fill="var(--color-requests)"
@@ -710,7 +752,8 @@ export default function CommandCenter() {
                                                     Lực lượng trực ban
                                                 </CardTitle>
                                                 <CardDescription>
-                                                    Trạng thái hiện tại của các đội cứu hộ
+                                                    Trạng thái hiện tại của các
+                                                    đội cứu hộ
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent className="flex-1 overflow-y-auto max-h-[300px] pr-2">
@@ -722,31 +765,46 @@ export default function CommandCenter() {
                                                         >
                                                             <div className="flex items-center gap-3">
                                                                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                                                                    {team.teamName.charAt(0)}
+                                                                    {team.teamName.charAt(
+                                                                        0
+                                                                    )}
                                                                 </div>
                                                                 <div>
                                                                     <p className="font-semibold text-slate-800 text-sm">
-                                                                        {team.teamName}
+                                                                        {
+                                                                            team.teamName
+                                                                        }
                                                                     </p>
                                                                     <p className="text-xs text-slate-500">
-                                                                        {team.leader?.fullName || 'Chưa rõ'}
+                                                                        {team
+                                                                            .leader
+                                                                            ?.fullName ||
+                                                                            'Chưa rõ'}
                                                                     </p>
                                                                 </div>
                                                             </div>
                                                             <Badge
                                                                 variant="outline"
                                                                 className={
-                                                                    TEAM_STATUS_BADGES[team.status]?.color ||
+                                                                    TEAM_STATUS_BADGES[
+                                                                        team
+                                                                            .status
+                                                                    ]?.color ||
                                                                     'bg-slate-100 text-slate-700'
                                                                 }
                                                             >
-                                                                {TEAM_STATUS_BADGES[team.status]?.label || team.status}
+                                                                {TEAM_STATUS_BADGES[
+                                                                    team.status
+                                                                ]?.label ||
+                                                                    team.status}
                                                             </Badge>
                                                         </div>
                                                     ))}
-                                                    {(!teams || teams.length === 0) && (
+                                                    {(!teams ||
+                                                        teams.length === 0) && (
                                                         <div className="text-center py-8 text-slate-500 text-sm">
-                                                            Chưa có đội cứu hộ nào
+                                                            Chưa có đội cứu hộ
+                                                            nào
                                                         </div>
                                                     )}
                                                 </div>
@@ -761,7 +819,8 @@ export default function CommandCenter() {
                                                 Yêu cầu khẩn cấp (Mới nhất)
                                             </CardTitle>
                                             <CardDescription>
-                                                Các trường hợp báo cáo sự cố chờ điều động lực lượng
+                                                Các trường hợp báo cáo sự cố chờ
+                                                điều động lực lượng
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent>
@@ -769,11 +828,21 @@ export default function CommandCenter() {
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow className="bg-slate-50 hover:bg-slate-50">
-                                                            <TableHead className="font-bold text-slate-600">ID Yêu cầu</TableHead>
-                                                            <TableHead className="font-bold text-slate-600">Loại sự cố</TableHead>
-                                                            <TableHead className="font-bold text-slate-600">Vị trí báo cáo</TableHead>
-                                                            <TableHead className="font-bold text-slate-600">Mức độ</TableHead>
-                                                            <TableHead className="text-right font-bold text-slate-600">Hành động</TableHead>
+                                                            <TableHead className="font-bold text-slate-600">
+                                                                ID Yêu cầu
+                                                            </TableHead>
+                                                            <TableHead className="font-bold text-slate-600">
+                                                                Loại sự cố
+                                                            </TableHead>
+                                                            <TableHead className="font-bold text-slate-600">
+                                                                Vị trí báo cáo
+                                                            </TableHead>
+                                                            <TableHead className="font-bold text-slate-600">
+                                                                Mức độ
+                                                            </TableHead>
+                                                            <TableHead className="text-right font-bold text-slate-600">
+                                                                Hành động
+                                                            </TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
@@ -784,40 +853,77 @@ export default function CommandCenter() {
                                                                     className="text-center py-8 text-slate-500"
                                                                 >
                                                                     <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
-                                                                    Đang tải dữ liệu...
+                                                                    Đang tải dữ
+                                                                    liệu...
                                                                 </TableCell>
                                                             </TableRow>
-                                                        ) : recentRequests.length === 0 ? (
+                                                        ) : recentRequests.length ===
+                                                          0 ? (
                                                             <TableRow>
                                                                 <TableCell
                                                                     colSpan={5}
                                                                     className="text-center py-8 text-slate-500 font-medium"
                                                                 >
-                                                                    Không có yêu cầu khẩn cấp nào đang chờ xử lý.
+                                                                    Không có yêu
+                                                                    cầu khẩn cấp
+                                                                    nào đang chờ
+                                                                    xử lý.
                                                                 </TableCell>
                                                             </TableRow>
                                                         ) : (
                                                             recentRequests.map(
                                                                 req => (
-                                                                    <TableRow key={req.id}>
+                                                                    <TableRow
+                                                                        key={
+                                                                            req.id
+                                                                        }
+                                                                    >
                                                                         <TableCell className="font-mono text-xs font-semibold text-slate-500">
-                                                                            {req.id.slice(0, 8).toUpperCase()}
+                                                                            {req.id
+                                                                                .slice(
+                                                                                    0,
+                                                                                    8
+                                                                                )
+                                                                                .toUpperCase()}
                                                                         </TableCell>
                                                                         <TableCell className="font-semibold text-slate-800">
-                                                                            {EMERGENCY_TYPES[req.emergencyType] || req.emergencyType}
+                                                                            {EMERGENCY_TYPES[
+                                                                                req
+                                                                                    .emergencyType
+                                                                            ] ||
+                                                                                req.emergencyType}
                                                                         </TableCell>
                                                                         <TableCell
                                                                             className="text-slate-600 truncate max-w-[200px]"
-                                                                            title={req.location?.address}
+                                                                            title={
+                                                                                req
+                                                                                    .location
+                                                                                    ?.address
+                                                                            }
                                                                         >
-                                                                            {req.location?.address || 'Chưa xác định'}
+                                                                            {req
+                                                                                .location
+                                                                                ?.address ||
+                                                                                'Chưa xác định'}
                                                                         </TableCell>
                                                                         <TableCell>
                                                                             <Badge
                                                                                 variant="secondary"
-                                                                                className={PRIORITY_BADGES[req.priority]?.color || 'bg-slate-100 text-slate-700'}
+                                                                                className={
+                                                                                    PRIORITY_BADGES[
+                                                                                        req
+                                                                                            .priority
+                                                                                    ]
+                                                                                        ?.color ||
+                                                                                    'bg-slate-100 text-slate-700'
+                                                                                }
                                                                             >
-                                                                                {PRIORITY_BADGES[req.priority]?.label || req.priority}
+                                                                                {PRIORITY_BADGES[
+                                                                                    req
+                                                                                        .priority
+                                                                                ]
+                                                                                    ?.label ||
+                                                                                    req.priority}
                                                                             </Badge>
                                                                         </TableCell>
                                                                         <TableCell className="text-right">
@@ -826,7 +932,8 @@ export default function CommandCenter() {
                                                                                 variant="default"
                                                                                 className="font-bold shadow-md shadow-blue-500/20"
                                                                             >
-                                                                                Điều động
+                                                                                Điều
+                                                                                động
                                                                             </Button>
                                                                         </TableCell>
                                                                     </TableRow>

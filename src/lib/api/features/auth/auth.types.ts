@@ -23,6 +23,7 @@ export interface RegisterRequest {
   address?: string;
   dateOfBirth: string;
   avatar?: string;
+  role?: string;
 }
 
 export interface AuthTokenPayload {

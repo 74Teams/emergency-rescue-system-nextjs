@@ -18,6 +18,7 @@ import { AlertCircle, Check } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
     email: "",
@@ -26,6 +27,7 @@ export default function RegisterPage() {
     fullName: "",
     phoneNumber: "",
     userName: "",
+    role: "Citizen",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -79,6 +81,7 @@ export default function RegisterPage() {
         address: "",
         dateOfBirth: new Date(2000, 0, 1).toISOString(),
         avatar: "",
+        role: formData.role,
       });
 
       toast.success("Đăng ký thành công! Hãy đăng nhập để tiếp tục.");
@@ -294,6 +297,25 @@ export default function RegisterPage() {
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-200">
+                      Vai trò đăng ký *
+                    </label>
+                    <Select 
+                      value={formData.role} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+                    >
+                      <SelectTrigger className="bg-slate-800/50 border-slate-700/50 focus:ring-emerald-500/20 w-full text-slate-100">
+                        <SelectValue placeholder="Chọn vai trò" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 text-slate-100">
+                        <SelectItem value="Citizen">Citizen (Người dân)</SelectItem>
+                        <SelectItem value="Rescuer">Rescuer (Nhân viên cứu hộ)</SelectItem>
+                        <SelectItem value="Dispatcher">Dispatcher (Điều phối viên)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <Button
                     type="submit"
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-10 mt-2"
@@ -307,8 +329,7 @@ export default function RegisterPage() {
                 <div className="mt-5 flex items-start gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
                   <AlertCircle className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-slate-300">
-                    Mật khẩu tối thiểu 6 ký tự, có ít nhất 1 chữ và 1 số. Tài
-                    khoản mới được gán vai trò Citizen.
+                    Mật khẩu tối thiểu 6 ký tự, có ít nhất 1 chữ và 1 số. Vui lòng chọn đúng vai trò của bạn.
                   </p>
                 </div>
               </CardContent>
