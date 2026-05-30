@@ -15,6 +15,16 @@ export interface MissionSummary {
     startTime?: string
     endTime?: string | null
     createdAt?: string
+    createAt?: string
+    updateAt?: string
+    dispatcher?: {
+        id: string
+        fullName?: string
+    }
+    rescueTeam?: {
+        id: string
+        teamName?: string
+    }
 }
 
 export interface CreateMissionInput {
