@@ -23,3 +23,10 @@ export const dictStatus: Record<string, string> = {
   COMPLETED: "Hoàn thành",
   CLOSED: "Đã đóng",
 };
+
+export const dictTeamStatus: Record<string, string> = {
+  AVAILABLE: "Sẵn sàng",
+  ON_MISSION: "Đang làm nhiệm vụ",
+  UNAVAILABLE: "Không sẵn sàng",
+  MAINTENANCE: "Bảo trì",
+};

@@ -6,8 +6,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTeamMembersQuery } from "@/lib/api/features/requests/dispatcher.queries";
-import type { RescueTeamSummary, TeamMemberSummary } from "@/lib/api/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  useTeamMembersQuery,
+  useCreateMissionMutation,
+  useChangeRequestStatusMutation,
+  emergencyTypeLabels,
+} from "@/lib/api/features/requests/dispatcher.queries";
+import { useProfileQuery } from "@/lib/api/use-profile";
+import type { RescueTeamSummary, RequestSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -17,34 +37,51 @@ import {
   Shield,
   UserCheck,
   Users,
+  MapPin,
+  Send,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { dictTeamStatus } from "@/constants/dictionary";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api/client";
 
 interface Props {
   teams: RescueTeamSummary[];
+  requests?: RequestSummary[];
+  initialTeamId?: string | null;
 }
 
 const teamStatusLabels: Record<
   string,
   { label: string; color: string; bg: string }
 > = {
-  ACTIVE: {
-    label: "Hoạt động",
-    color: "text-emerald-700",
-    bg: "bg-emerald-50",
-  },
   AVAILABLE: {
-    label: "Sẵn sàng",
+    label: dictTeamStatus.AVAILABLE,
     color: "text-emerald-700",
     bg: "bg-emerald-50",
   },
-  ON_DUTY: { label: "Đang trực", color: "text-blue-700", bg: "bg-blue-50" },
+  ON_MISSION: {
+    label: dictTeamStatus.ON_MISSION,
+    color: "text-blue-700",
+    bg: "bg-blue-50",
+  },
+  UNAVAILABLE: {
+    label: dictTeamStatus.UNAVAILABLE,
+    color: "text-red-700",
+    bg: "bg-red-50",
+  },
+  MAINTENANCE: {
+    label: dictTeamStatus.MAINTENANCE,
+    color: "text-orange-700",
+    bg: "bg-orange-50",
+  },
+  // Fallback
   INACTIVE: {
     label: "Không HĐ",
     color: "text-slate-500",
     bg: "bg-slate-100",
   },
-  OFF_DUTY: { label: "Nghỉ", color: "text-amber-700", bg: "bg-amber-50" },
 };
 
 // ─── TEAM LIST VIEW ─────────────────────────────────────
@@ -156,14 +193,63 @@ function TeamListView({
 // ─── TEAM DETAIL VIEW ────────────────────────────────────
 function TeamDetailView({
   team,
+  requests = [],
   onBack,
 }: {
   team: RescueTeamSummary;
+  requests?: RequestSummary[];
   onBack: () => void;
 }) {
   const membersQuery = useTeamMembersQuery(team.id);
   const members = membersQuery.data ?? [];
   const st = teamStatusLabels[team.status] ?? teamStatusLabels.INACTIVE;
+
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState("");
+  
+  const { data: profile } = useProfileQuery();
+  const createMission = useCreateMissionMutation();
+  const changeStatus = useChangeRequestStatusMutation();
+
+  const handleAssignMission = async () => {
+    if (!selectedRequestId || !team.id) return;
+    const request = requests.find(r => r.id === selectedRequestId);
+    if (!request) return;
+
+    const dispatcherId = profile?.id;
+    if (!dispatcherId) {
+      toast.error("Không lấy được thông tin điều phối viên");
+      return;
+    }
+
+    try {
+      if (request.status === "PENDING") {
+        await changeStatus.mutateAsync({
+          requestId: request.id,
+          newStatus: "ACCEPTED",
+          note: "Điều phối viên tiếp nhận",
+        });
+      }
+
+      await createMission.mutateAsync({
+        requestId: request.id,
+        dispatcherId,
+        rescueTeamId: team.id,
+      });
+
+      toast.success("Đã phân công nhiệm vụ thành công!", {
+        description: `Đội ${team.teamName} đã nhận nhiệm vụ.`,
+      });
+      setAssignDialogOpen(false);
+      setSelectedRequestId("");
+    } catch (error) {
+      toast.error("Lỗi tạo nhiệm vụ", {
+        description: getApiErrorMessage(error),
+      });
+    }
+  };
+
+  const pendingRequests = requests.filter(r => r.status === "PENDING" || r.status === "ACCEPTED");
 
   return (
     <div className="flex flex-col gap-4">
@@ -193,11 +279,23 @@ function TeamDetailView({
                 </p>
               </div>
             </div>
-            <Badge
-              className={`${st.bg} ${st.color} border-none font-bold text-xs px-3 py-1`}
-            >
-              {st.label}
-            </Badge>
+            <div className="flex flex-col items-end gap-2">
+              <Badge
+                className={`${st.bg} ${st.color} border-none font-bold text-xs px-3 py-1`}
+              >
+                {st.label}
+              </Badge>
+              {team.status === "AVAILABLE" && (
+                <Button 
+                  onClick={() => setAssignDialogOpen(true)}
+                  className="bg-[#003da5] hover:bg-blue-800 text-white shadow-sm mt-1" 
+                  size="sm"
+                >
+                  <MapPin className="w-3.5 h-3.5 mr-1.5" />
+                  Giao nhiệm vụ
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
 
@@ -380,21 +478,98 @@ function TeamDetailView({
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-blue-600" />
+              Giao nhiệm vụ cho {team.teamName}
+            </DialogTitle>
+            <DialogDescription>
+              Chọn một yêu cầu cứu trợ đang chờ xử lý để phân công cho đội này.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-2">
+            <div>
+              <label className="text-sm font-bold text-slate-800 mb-2 block">
+                Chọn Sự Cố / Yêu Cầu *
+              </label>
+              <Select
+                value={selectedRequestId}
+                onValueChange={setSelectedRequestId}
+              >
+                <SelectTrigger className="bg-white h-12 border-slate-200 shadow-sm focus:ring-[#003da5] rounded-xl text-left">
+                  <SelectValue placeholder="-- Nhấn để chọn Yêu cầu cứu trợ --" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px] rounded-xl max-w-[calc(100vw-2rem)] sm:max-w-none">
+                  {pendingRequests.length === 0 && (
+                    <div className="p-4 text-center text-sm text-slate-500">
+                      Không có yêu cầu nào đang chờ xử lý.
+                    </div>
+                  )}
+                  {pendingRequests.map((req) => {
+                    return (
+                      <SelectItem
+                        key={req.id}
+                        value={req.id}
+                        className="py-2.5 px-3 mb-1 cursor-pointer rounded-lg hover:bg-blue-50 focus:bg-blue-50 transition-colors"
+                      >
+                        <div className="flex flex-col text-left pr-4">
+                          <span className="font-bold text-slate-800 text-sm">
+                            {emergencyTypeLabels[req.emergencyType] ?? req.emergencyType}
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-medium truncate max-w-[300px] mt-0.5">
+                            {req.location?.address ?? "Chưa rõ vị trí"}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full bg-[#003da5] hover:bg-blue-800 text-white font-bold h-11"
+              disabled={!selectedRequestId || createMission.isPending}
+              onClick={handleAssignMission}
+            >
+              {createMission.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              XÁC NHẬN PHÂN CÔNG
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-// ─── MAIN EXPORT ─────────────────────────────────────────
-export function TeamsPanel({ teams }: Props) {
-  const [selectedTeam, setSelectedTeam] = useState<RescueTeamSummary | null>(
-    null,
-  );
+export function TeamsPanel({ teams, requests = [], initialTeamId }: Props) {
+  const [selectedTeam, setSelectedTeam] = useState<RescueTeamSummary | null>(null);
+
+  useEffect(() => {
+    if (initialTeamId) {
+      const t = teams.find(x => x.id === initialTeamId);
+      if (t) setSelectedTeam(t);
+    }
+  }, [initialTeamId, teams]);
 
   if (selectedTeam) {
     return (
       <TeamDetailView
         team={selectedTeam}
-        onBack={() => setSelectedTeam(null)}
+        requests={requests}
+        onBack={() => {
+          setSelectedTeam(null);
+          // If they came from URL directly, going back shouldn't just keep them stuck 
+          // We don't have direct access to clear URL param here without router, 
+          // but just setting selectedTeam to null reverts to list view which is correct UX.
+        }}
       />
     );
   }

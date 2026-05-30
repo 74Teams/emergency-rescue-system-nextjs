@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import {
     Users,
+    User,
     UserPlus,
     ShieldHalf,
     Bell,
@@ -28,6 +29,8 @@ import {
     ChevronRight,
     Zap,
     TrendingDown,
+    Settings,
+    LogOut,
 } from 'lucide-react'
 
 import { BarChart, Bar, CartesianGrid, XAxis } from 'recharts'
@@ -55,12 +58,11 @@ const MapView = dynamic(
 
 import RescueTeamsList from '@/components/dashboards/commander/RescueTeamsList'
 import ActionPanel from '@/components/dashboards/commander/ActionPanel'
+
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import Link from 'next/link'
 
-// =========================================================================
-// IMPORTS 100% SHADCN UI COMPONENTS
-// =========================================================================
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -101,14 +103,13 @@ import {
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
-    SidebarMenuItem,
     SidebarProvider,
     SidebarFooter,
+    SidebarTrigger,
+    SidebarMenuItem,
 } from '@/components/ui/sidebar'
 
-// =========================================================================
-// IMPORTS API HOOKS & TYPES
-// =========================================================================
+
 import {
     usePendingApprovals,
     useSystemUsers,
@@ -121,6 +122,8 @@ import {
     useRemoveTeamMember,
 } from '@/lib/api/features/commander/commander-dashboard.queries'
 import { useRequests } from '@/lib/api/features/requests/requests.queries'
+import { useLogout } from '@/lib/api/use-auth'
+import { useProfileQuery } from '@/lib/api/use-profile'
 import {
     ApiRole,
     RescueTeamSummary,
@@ -170,11 +173,14 @@ export default function CommandCenter() {
     const { data: allUsers, isLoading: isLoadingUsers } = useSystemUsers()
     const { data: teams, isLoading: isLoadingTeams } = useRescueTeams()
     const { data: requestsData, isLoading: isLoadingRequests } = useRequests({
-        page: 1,
+        pageNumber: 1,
         pageSize: 5,
         status: 'PENDING',
     })
     const recentRequests = requestsData?.items || []
+
+    const logout = useLogout()
+    const { data: profile } = useProfileQuery()
 
     // === MUTATIONS ===
     const approveMutation = useApproveUser()
@@ -198,7 +204,6 @@ export default function CommandCenter() {
     const [accountPage, setAccountPage] = useState(1)
     const ACCOUNTS_PER_PAGE = 10
 
-    // === STATES CHO RESCUE MAP TAB ===
     const [mapSelectedTeamId, setMapSelectedTeamId] = useState<
         string | undefined
     >(undefined)
@@ -207,6 +212,7 @@ export default function CommandCenter() {
     >(undefined)
     const [isChangeStatusOpen, setIsChangeStatusOpen] = useState(false)
     const [isActionPanelOpen, setIsActionPanelOpen] = useState(false)
+    const [isRescueTeamsListOpen, setIsRescueTeamsListOpen] = useState(true)
 
     const handleMapSelectTeam = (teamId: string) => {
         setMapSelectedTeamId(teamId)
@@ -221,7 +227,7 @@ export default function CommandCenter() {
             setIsActionPanelOpen(true)
             setIsChangeStatusOpen(true)
         } else if (action === 'assign_mission') {
-            setIsActionPanelOpen(true)
+            router.push(`/dispatcher?view=teams&teamId=${teamId}`)
         } else if (action === 'view_details') {
             setIsActionPanelOpen(true)
         }
@@ -270,7 +276,7 @@ export default function CommandCenter() {
             const err = error as { response?: { data?: { message?: string } } }
             toast.error(
                 err.response?.data?.message ||
-                    'Lỗi khi thay đổi trạng thái. Vui lòng kiểm tra dữ liệu.'
+                'Lỗi khi thay đổi trạng thái. Vui lòng kiểm tra dữ liệu.'
             )
         }
     }
@@ -493,21 +499,31 @@ export default function CommandCenter() {
                         </SidebarMenu>
                     </SidebarContent>
 
-                    <SidebarFooter className="p-4 mt-auto border-t border-slate-100">
-                        <div className="flex items-center gap-3 p-2">
-                            <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
-                                <AvatarImage src="https://ui-avatars.com/api/?name=HQ&background=3b82f6&color=fff" />
-                                <AvatarFallback>HQ</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 overflow-hidden">
-                                <p className="text-sm font-bold text-slate-800 truncate">
-                                    Sĩ quan Chỉ Huy
-                                </p>
-                                <p className="text-[11px] text-slate-500 truncate">
-                                    Hệ thống cấp cao
-                                </p>
-                            </div>
-                        </div>
+                    <SidebarFooter className="px-4 pb-4 mt-auto border-t border-slate-100 pt-3">
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    tooltip="Cài đặt"
+                                    className="cursor-pointer h-10 rounded-xl text-slate-500 hover:text-slate-900 font-bold transition-all duration-200"
+                                    asChild
+                                >
+                                    <Link href="/profile">
+                                        <Settings size={18} className="mr-3" />
+                                        <span>Cài đặt</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    tooltip="Đăng xuất"
+                                    className="cursor-pointer h-10 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 font-bold transition-all duration-200"
+                                    onClick={logout}
+                                >
+                                    <LogOut size={18} className="mr-3" />
+                                    <span>Đăng xuất</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
                     </SidebarFooter>
                 </Sidebar>
 
@@ -515,6 +531,9 @@ export default function CommandCenter() {
                     {/* === TOPBAR === */}
                     <header className="flex justify-between items-center px-8 w-full sticky top-0 z-40 bg-white/70 backdrop-blur-xl h-20 border-b border-slate-200/60 shadow-sm">
                         <div className="flex items-center gap-6 flex-1">
+                            <div className="flex items-center gap-2">
+                                <SidebarTrigger className="hover:bg-slate-100/50 h-10 w-10 border border-slate-200 rounded-xl" />
+                            </div>
                             <h2 className="text-xl font-extrabold text-slate-800 tracking-tight hidden lg:block">
                                 {activeTab === 'overview' &&
                                     'Tổng quan hệ thống'}
@@ -525,7 +544,7 @@ export default function CommandCenter() {
                                 {activeTab === 'rescue_map' && 'Bản đồ Cứu hộ'}
                             </h2>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -534,6 +553,18 @@ export default function CommandCenter() {
                                 <Bell size={20} strokeWidth={2.5} />
                                 <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
                             </Button>
+
+                            <div className="h-8 w-px bg-slate-200 mx-1"></div>
+
+                            <Link
+                                href="/profile"
+                                className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue-500 hover:ring-2 hover:ring-blue-100 transition-all shadow-sm"
+                            >
+                                <Avatar className="w-10 h-10 border-2 border-white cursor-pointer hover:shadow-md transition-all">
+                                    <AvatarImage src={profile?.avatarUrl || profile?.avatar || "https://ui-avatars.com/api/?name=HQ&background=3b82f6&color=fff"} />
+                                    <AvatarFallback className="font-bold text-blue-600">{profile?.fullName?.[0]?.toUpperCase() || 'HQ'}</AvatarFallback>
+                                </Avatar>
+                            </Link>
                         </div>
                     </header>
 
@@ -795,18 +826,18 @@ export default function CommandCenter() {
                                                             >
                                                                 {TEAM_STATUS_BADGES[
                                                                     team.status
-                                                                ]?.label ||
+                                                                ]?.text ||
                                                                     team.status}
                                                             </Badge>
                                                         </div>
                                                     ))}
                                                     {(!teams ||
                                                         teams.length === 0) && (
-                                                        <div className="text-center py-8 text-slate-500 text-sm">
-                                                            Chưa có đội cứu hộ
-                                                            nào
-                                                        </div>
-                                                    )}
+                                                            <div className="text-center py-8 text-slate-500 text-sm">
+                                                                Chưa có đội cứu hộ
+                                                                nào
+                                                            </div>
+                                                        )}
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -858,7 +889,7 @@ export default function CommandCenter() {
                                                                 </TableCell>
                                                             </TableRow>
                                                         ) : recentRequests.length ===
-                                                          0 ? (
+                                                            0 ? (
                                                             <TableRow>
                                                                 <TableCell
                                                                     colSpan={5}
@@ -1209,7 +1240,7 @@ export default function CommandCenter() {
                                                 </TableHeader>
                                                 <TableBody>
                                                     {paginatedAccounts?.length ===
-                                                    0 ? (
+                                                        0 ? (
                                                         <TableRow>
                                                             <TableCell
                                                                 colSpan={4}
@@ -1255,7 +1286,7 @@ export default function CommandCenter() {
                                                                                 role => {
                                                                                     const roleStyle =
                                                                                         ROLE_BADGES[
-                                                                                            role
+                                                                                        role
                                                                                         ] || {
                                                                                             text: role,
                                                                                             color: 'bg-slate-50 text-slate-600 border border-slate-200 font-medium',
@@ -1321,8 +1352,8 @@ export default function CommandCenter() {
                                                                             className={cn(
                                                                                 'rounded-lg',
                                                                                 acc.isActive
-                                                                                    ? 'text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200'
-                                                                                    : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200'
+                                                                                    ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200'
+                                                                                    : 'text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200'
                                                                             )}
                                                                             title={
                                                                                 acc.isActive
@@ -1364,7 +1395,7 @@ export default function CommandCenter() {
                                                             -{' '}
                                                             {Math.min(
                                                                 accountPage *
-                                                                    ACCOUNTS_PER_PAGE,
+                                                                ACCOUNTS_PER_PAGE,
                                                                 filteredAccounts.length
                                                             )}{' '}
                                                             trong số{' '}
@@ -1384,7 +1415,7 @@ export default function CommandCenter() {
                                                                             Math.max(
                                                                                 1,
                                                                                 p -
-                                                                                    1
+                                                                                1
                                                                             )
                                                                     )
                                                                 }
@@ -1413,17 +1444,17 @@ export default function CommandCenter() {
                                                                         // Hiển thị giới hạn số trang (ví dụ chỉ hiện trang đầu, cuối và các trang xung quanh trang hiện tại)
                                                                         if (
                                                                             totalAccountPages <=
-                                                                                5 ||
+                                                                            5 ||
                                                                             pageNum ===
-                                                                                1 ||
+                                                                            1 ||
                                                                             pageNum ===
-                                                                                totalAccountPages ||
+                                                                            totalAccountPages ||
                                                                             (pageNum >=
                                                                                 accountPage -
-                                                                                    1 &&
+                                                                                1 &&
                                                                                 pageNum <=
-                                                                                    accountPage +
-                                                                                        1)
+                                                                                accountPage +
+                                                                                1)
                                                                         ) {
                                                                             return (
                                                                                 <Button
@@ -1432,7 +1463,7 @@ export default function CommandCenter() {
                                                                                     }
                                                                                     variant={
                                                                                         accountPage ===
-                                                                                        pageNum
+                                                                                            pageNum
                                                                                             ? 'default'
                                                                                             : 'outline'
                                                                                     }
@@ -1458,15 +1489,15 @@ export default function CommandCenter() {
                                                                         } else if (
                                                                             (pageNum ===
                                                                                 accountPage -
-                                                                                    2 &&
+                                                                                2 &&
                                                                                 pageNum >
-                                                                                    2) ||
+                                                                                2) ||
                                                                             (pageNum ===
                                                                                 accountPage +
-                                                                                    2 &&
+                                                                                2 &&
                                                                                 pageNum <
-                                                                                    totalAccountPages -
-                                                                                        1)
+                                                                                totalAccountPages -
+                                                                                1)
                                                                         ) {
                                                                             return (
                                                                                 <span
@@ -1494,7 +1525,7 @@ export default function CommandCenter() {
                                                                             Math.min(
                                                                                 totalAccountPages,
                                                                                 p +
-                                                                                    1
+                                                                                1
                                                                             )
                                                                     )
                                                                 }
@@ -1545,7 +1576,7 @@ export default function CommandCenter() {
                                                 (team: RescueTeamSummary) => {
                                                     const statusStyle =
                                                         TEAM_STATUS_BADGES[
-                                                            team.status
+                                                        team.status
                                                         ] || {
                                                             text: 'Không rõ',
                                                             variant: 'outline',
@@ -1596,10 +1627,10 @@ export default function CommandCenter() {
                                                                                     .leader
                                                                                     ?.fullName
                                                                                     ? getAvatarText(
-                                                                                          team
-                                                                                              .leader
-                                                                                              .fullName
-                                                                                      )
+                                                                                        team
+                                                                                            .leader
+                                                                                            .fullName
+                                                                                    )
                                                                                     : 'LD'}
                                                                             </AvatarFallback>
                                                                         </Avatar>
@@ -1687,9 +1718,36 @@ export default function CommandCenter() {
                             {/* TAB 4: RESCUE MAP */}
                             {/* ========================================================================= */}
                             {activeTab === 'rescue_map' && (
-                                <section className="absolute inset-x-0 bottom-0 top-20 flex overflow-hidden bg-white">
-                                    {/* 1. Danh sách đội */}
-                                    <div className="w-[380px] shrink-0 border-r border-slate-200 bg-white flex flex-col h-full overflow-hidden">
+                                <section className="absolute inset-x-0 bottom-0 top-20 overflow-hidden bg-slate-50">
+                                    {/* 1. Bản đồ - Tràn viền */}
+                                    <div className="absolute inset-0 z-0">
+                                        <MapView
+                                            selectedTeamId={mapSelectedTeamId}
+                                            hoveredTeamId={mapHoveredTeamId}
+                                            onSelectTeam={handleMapSelectTeam}
+                                            onHoverTeam={handleMapHoverTeam}
+                                            onTeamAction={handleMapTeamAction}
+                                            isActionPanelOpen={isActionPanelOpen}
+                                            isRescueTeamsListOpen={isRescueTeamsListOpen}
+                                        />
+                                    </div>
+
+                                    {/* Nút Toggle Danh sách đội (Left) */}
+                                    <button
+                                        onClick={() => setIsRescueTeamsListOpen(!isRescueTeamsListOpen)}
+                                        className={cn(
+                                            "absolute top-24 z-20 h-11 bg-white/90 backdrop-blur-xl shadow-[8px_8px_30px_rgba(0,0,0,0.12)] border border-white/50 flex items-center justify-center text-slate-700 hover:bg-white hover:text-blue-600 transition-all duration-500 px-3",
+                                            isRescueTeamsListOpen ? "left-[404px] rounded-r-2xl border-l-0" : "left-0 rounded-r-2xl border-l-0"
+                                        )}
+                                    >
+                                        {isRescueTeamsListOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+                                        {!isRescueTeamsListOpen && <span className="ml-1 text-xs font-bold uppercase tracking-wider">Danh sách</span>}
+                                    </button>
+
+                                    {/* 2. Danh sách đội - Floating Panel Trái */}
+                                    <div className={cn("absolute left-6 top-6 bottom-6 w-[380px] z-10 flex flex-col rounded-3xl bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-500",
+                                        isRescueTeamsListOpen ? "translate-x-0 opacity-100 pointer-events-auto" : "-translate-x-[150%] opacity-0 pointer-events-none"
+                                    )}>
                                         <RescueTeamsList
                                             selectedTeamId={mapSelectedTeamId}
                                             onSelectTeam={handleMapSelectTeam}
@@ -1698,38 +1756,37 @@ export default function CommandCenter() {
                                         />
                                     </div>
 
-                                    {/* 2. Bản đồ*/}
-                                    <div className="flex-1 relative h-full bg-slate-100">
-                                        <MapView
-                                            selectedTeamId={mapSelectedTeamId}
-                                            hoveredTeamId={mapHoveredTeamId}
-                                            onSelectTeam={handleMapSelectTeam}
-                                            onHoverTeam={handleMapHoverTeam}
-                                        />
-                                    </div>
-
-                                    {/* 3. Action Panel */}
+                                    {/* Nút Toggle Action Panel (Right Bar) */}
                                     {mapSelectedTeamId && (
-                                        <div className="w-[350px] shrink-0 border-l border-slate-200 bg-white shadow-xl h-full animate-in slide-in-from-right-10 duration-300">
+                                        <button
+                                            onClick={() => setIsActionPanelOpen(!isActionPanelOpen)}
+                                            className={cn(
+                                                "absolute top-24 z-20 h-11 bg-white/90 backdrop-blur-xl shadow-[-8px_8px_30px_rgba(0,0,0,0.12)] border border-white/50 flex items-center justify-center text-slate-700 hover:bg-white hover:text-blue-600 transition-all duration-500 px-3",
+                                                isActionPanelOpen ? "right-[404px] rounded-l-2xl border-r-0" : "right-0 rounded-l-2xl border-r-0"
+                                            )}
+                                        >
+                                            {!isActionPanelOpen && <span className="mr-1 text-xs font-bold uppercase tracking-wider">Chi tiết</span>}
+                                            {isActionPanelOpen ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+                                        </button>
+                                    )}
+
+                                    {/* 3. Action Panel - Floating Panel Phải */}
+                                    <div className={cn("absolute right-6 top-6 bottom-6 w-[380px] z-10 rounded-3xl bg-white/80 backdrop-blur-2xl border border-white/60 shadow-[0_12px_40px_rgba(0,0,0,0.12)] overflow-hidden transition-all duration-500",
+                                        (mapSelectedTeamId && isActionPanelOpen) ? "translate-x-0 opacity-100 pointer-events-auto" : "translate-x-[150%] opacity-0 pointer-events-none"
+                                    )}>
+                                        {mapSelectedTeamId && (
                                             <ActionPanel
                                                 key={mapSelectedTeamId}
-                                                selectedTeamId={
-                                                    mapSelectedTeamId
-                                                }
-                                                onClose={() =>
-                                                    setMapSelectedTeamId(
-                                                        undefined
-                                                    )
-                                                }
-                                                isChangeStatusOpen={
-                                                    isChangeStatusOpen
-                                                }
-                                                onOpenChangeStatus={
-                                                    setIsChangeStatusOpen
-                                                }
+                                                selectedTeamId={mapSelectedTeamId}
+                                                onClose={() => {
+                                                    setMapSelectedTeamId(undefined)
+                                                    setIsActionPanelOpen(false)
+                                                }}
+                                                isChangeStatusOpen={isChangeStatusOpen}
+                                                onOpenChangeStatus={setIsChangeStatusOpen}
                                             />
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </section>
                             )}
                         </div>

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import type { TeamStatus } from "@/lib/api/types";
 import { CheckCircle2, Clock, XCircle, Wrench, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { dictTeamStatus } from "@/constants/dictionary";
 
 /**
  * Component Status Filter cho Command Center
@@ -52,25 +53,25 @@ const STATUS_CONFIG = {
     hoverColor: "hover:bg-slate-600",
   },
   AVAILABLE: {
-    label: "Sẵn sàng",
+    label: dictTeamStatus.AVAILABLE,
     icon: CheckCircle2,
     color: "bg-green-500",
     hoverColor: "hover:bg-green-600",
   },
   ON_MISSION: {
-    label: "Đang nhiệm vụ",
+    label: dictTeamStatus.ON_MISSION,
     icon: Clock,
     color: "bg-blue-500",
     hoverColor: "hover:bg-blue-600",
   },
   UNAVAILABLE: {
-    label: "Không hoạt động",
+    label: dictTeamStatus.UNAVAILABLE,
     icon: XCircle,
     color: "bg-red-500",
     hoverColor: "hover:bg-red-600",
   },
   MAINTENANCE: {
-    label: "Bảo trì",
+    label: dictTeamStatus.MAINTENANCE,
     icon: Wrench,
     color: "bg-orange-500",
     hoverColor: "hover:bg-orange-600",

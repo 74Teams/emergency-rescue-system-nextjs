@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { getInitials } from "@/lib/utils/initials";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { dictTeamStatus } from "@/constants/dictionary";
 
 /**
  * Component Team Card cho Command Center
@@ -68,22 +69,22 @@ const STATUS_CONFIG: Record<
   AVAILABLE: {
     icon: CheckCircle2,
     color: "bg-green-500",
-    label: "Sẵn sàng",
+    label: dictTeamStatus.AVAILABLE,
   },
   ON_MISSION: {
     icon: Clock,
     color: "bg-blue-500",
-    label: "Đang nhiệm vụ",
+    label: dictTeamStatus.ON_MISSION,
   },
   UNAVAILABLE: {
     icon: XCircle,
     color: "bg-red-500",
-    label: "Không hoạt động",
+    label: dictTeamStatus.UNAVAILABLE,
   },
   MAINTENANCE: {
     icon: Wrench,
     color: "bg-orange-500",
-    label: "Bảo trì",
+    label: dictTeamStatus.MAINTENANCE,
   },
 };
 
@@ -203,7 +204,7 @@ export default function TeamCard({
       className={cn(
         "cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-700",
         isSelected &&
-          "ring-2 ring-blue-500 shadow-md border-blue-300 dark:border-blue-700",
+        "ring-2 ring-blue-500 shadow-md border-blue-300 dark:border-blue-700",
       )}
       onClick={handleCardClick}
       onMouseEnter={handleMouseEnter}

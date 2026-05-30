@@ -11,6 +11,7 @@ export interface CommanderAccountSummary {
   isActive: boolean;
   role: ApiRole[];
   createdAt?: string;
+  rescueTeamId?: string | null;
 }
 
 export interface AccountQueryParams extends PaginationQuery {

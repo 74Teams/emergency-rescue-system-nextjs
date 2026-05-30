@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Bell } from "lucide-react";
@@ -27,8 +28,36 @@ const VIEW_TITLES: Record<DispatcherView, string> = {
 };
 
 export default function DispatcherDashboard() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const viewParam = searchParams?.get("view") as DispatcherView | null;
+  const teamIdParam = searchParams?.get("teamId");
+
   const [activeView, setActiveView] = useState<DispatcherView>("requests");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  
+  // Sync URL params to local state then clean up URL
+  useEffect(() => {
+    let shouldReplace = false;
+
+    if (viewParam && VIEW_TITLES[viewParam as DispatcherView]) {
+      setActiveView(viewParam as DispatcherView);
+      shouldReplace = true;
+    }
+    
+    if (teamIdParam) {
+      setSelectedTeamId(teamIdParam);
+      shouldReplace = true;
+    }
+
+    if (shouldReplace) {
+      router.replace(pathname, { scroll: false });
+    }
+  }, [viewParam, teamIdParam, pathname, router]);
+
+  const [statusFilter, setStatusFilter] = useState<string>("PENDING");
   const [selectedRequest, setSelectedRequest] =
     useState<RequestSummary | null>(null);
 
@@ -109,7 +138,7 @@ export default function DispatcherDashboard() {
         </header>
 
         {/* SCROLLABLE CONTENT AREA */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/80">
+        <div className="flex-1 overflow-hidden flex flex-col p-4 md:p-6 bg-slate-50/80">
           {/* STATS OVERVIEW */}
           <DispatcherOverview
             requests={allRequests}
@@ -118,7 +147,7 @@ export default function DispatcherDashboard() {
           />
 
           {/* ACTIVE VIEW CONTENT */}
-          <div className="mt-5">
+          <div className="mt-4 flex-1 min-h-0">
             {activeView === "requests" && (
               <RequestsTable
                 requests={filteredRequests}
@@ -139,7 +168,13 @@ export default function DispatcherDashboard() {
               />
             )}
 
-            {activeView === "teams" && <TeamsPanel teams={teams} />}
+            {activeView === "teams" && (
+              <TeamsPanel 
+                teams={teams} 
+                requests={allRequests} 
+                initialTeamId={selectedTeamId} 
+              />
+            )}
 
             {activeView === "analytics" && (
               <AnalyticsPanel

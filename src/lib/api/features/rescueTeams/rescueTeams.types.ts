@@ -51,6 +51,7 @@ export interface RescueTeamMemberDTO {
   phoneNumber: string;
   avatar?: string;
   isActive: boolean;
+  roles?: string[];
 }
 
 export interface RescueTeamQueryParams extends PaginationQuery {

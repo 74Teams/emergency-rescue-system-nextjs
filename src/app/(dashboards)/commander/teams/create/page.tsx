@@ -58,7 +58,7 @@ export default function CreateTeamPage() {
   // === FORM STATES ===
   const [teamName, setTeamName] = useState("");
   const [description, setDescription] = useState("");
-  const [baseLocationId] = useState("5E957A75-600F-482F-B72C-C2ED25C1310A");
+  const [baseLocationId] = useState("ABB2B119-A482-4515-AAB8-353133D41010");
 
   const [selectedLeader, setSelectedLeader] = useState<ProfileResponse | null>(
     null,
@@ -73,7 +73,7 @@ export default function CreateTeamPage() {
     return allUsers?.filter(
       (u) =>
         u.isActive &&
-        !u.roles?.includes("Rescuer") &&
+        u.roles?.includes("Rescuer") &&
         !u.roles?.includes("RescuerLeader"),
     );
   }, [allUsers]);
@@ -82,8 +82,9 @@ export default function CreateTeamPage() {
     return allUsers?.filter(
       (u) =>
         u.isActive &&
-        !u.roles?.includes("Rescuer") &&
+        u.roles?.includes("Rescuer") &&
         !u.roles?.includes("RescuerLeader") &&
+        !u.rescueTeamId && // Không thuộc về bất kỳ team nào
         u.id !== selectedLeader?.id && // Không cho Đội trưởng làm thành viên
         !selectedMembers.some((m) => m.id === u.id), // Ẩn những người đã được chọn
     );

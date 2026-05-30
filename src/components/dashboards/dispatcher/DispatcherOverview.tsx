@@ -30,11 +30,7 @@ export function DispatcherOverview({ requests, teams, missions }: Props) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Bảng Điều Phối Cứu Trợ</h1>
-          <p className="text-slate-500 text-sm mt-1">RescueCore — Giám sát & Điều động thời gian thực</p>
-        </div>
+      <div className="flex items-center justify-end mb-3">
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <span className="relative flex h-2 w-2"><span className="animate-ping absolute h-full w-full rounded-full bg-green-400 opacity-75" /><span className="relative rounded-full h-2 w-2 bg-green-500" /></span>
           Đang kết nối API • {teams.length} đội • {activeTeams} sẵn sàng

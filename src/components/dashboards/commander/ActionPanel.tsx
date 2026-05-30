@@ -44,6 +44,7 @@ import { getInitials } from "@/lib/utils/initials";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";
+import { dictTeamStatus } from "@/constants/dictionary";
 
 interface ActionPanelProps {
   selectedTeamId?: string;
@@ -61,25 +62,25 @@ const STATUS_OPTIONS: {
 }[] = [
   {
     value: "AVAILABLE",
-    label: "Sẵn sàng",
+    label: dictTeamStatus.AVAILABLE,
     icon: CheckCircle2,
     color: "bg-green-500",
   },
   {
     value: "ON_MISSION",
-    label: "Đang nhiệm vụ",
+    label: dictTeamStatus.ON_MISSION,
     icon: Clock,
     color: "bg-blue-500",
   },
   {
     value: "UNAVAILABLE",
-    label: "Không hoạt động",
+    label: dictTeamStatus.UNAVAILABLE,
     icon: X,
     color: "bg-red-500",
   },
   {
     value: "MAINTENANCE",
-    label: "Bảo trì",
+    label: dictTeamStatus.MAINTENANCE,
     icon: AlertTriangle,
     color: "bg-orange-500",
   },

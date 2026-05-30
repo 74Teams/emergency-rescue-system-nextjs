@@ -10,9 +10,7 @@ export default function DispatcherLayout({
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <div className="flex h-screen w-full overflow-hidden bg-slate-50">
-          {children}
-        </div>
+        {children}
       </SidebarProvider>
     </TooltipProvider>
   )
