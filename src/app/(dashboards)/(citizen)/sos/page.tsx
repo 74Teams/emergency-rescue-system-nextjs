@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input'
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
@@ -15,6 +17,7 @@ import { useCreateCitizenRequestMutation } from '@/lib/api/features/requests/cit
 import type { EmergencyCategory, RequestPriority } from '@/types/request'
 
 import {
+    ArrowLeft,
     Loader2,
     LocateFixed,
     MapPin,
@@ -24,7 +27,8 @@ import {
     UploadCloud,
 } from 'lucide-react'
 import Image from 'next/image'
-import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 const emergencyCategoryToApiValue: Record<EmergencyCategory, number> = {
@@ -54,6 +58,67 @@ export default function SubmitRequestPage() {
     const [landmark, setLandmark] = useState('')
     const [description, setDescription] = useState('')
     const [coords, setCoords] = useState('')
+
+    const [suggestions, setSuggestions] = useState<
+        { display_name: string; lat: string; lon: string }[]
+    >([])
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+    const [showSuggestions, setShowSuggestions] = useState(false)
+    const suggestionContainerRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                suggestionContainerRef.current &&
+                !suggestionContainerRef.current.contains(event.target as Node)
+            ) {
+                setShowSuggestions(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    useEffect(() => {
+        if (!address.trim() || address.length < 3 || !showSuggestions) {
+            setSuggestions([])
+            return
+        }
+
+        const timer = setTimeout(async () => {
+            setIsLoadingSuggestions(true)
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=5&countrycodes=vn`
+                )
+                if (res.ok) {
+                    const data = await res.json()
+                    setSuggestions(data)
+                }
+            } catch (error) {
+                console.error('Error fetching suggestions:', error)
+            } finally {
+                setIsLoadingSuggestions(false)
+            }
+        }, 600)
+
+        return () => clearTimeout(timer)
+    }, [address, showSuggestions])
+
+    const handleSelectSuggestion = (item: {
+        display_name: string
+        lat: string
+        lon: string
+    }) => {
+        setShowSuggestions(false)
+        setAddress(item.display_name)
+        setCoords(
+            `${parseFloat(item.lat).toFixed(5)}, ${parseFloat(item.lon).toFixed(5)}`
+        )
+        setSuggestions([])
+        toast.success('Đã điền địa chỉ và tọa độ GPS.')
+    }
     const [attachments, setAttachments] = useState<
         { file: File; preview: string; type: string }[]
     >([])
@@ -145,9 +210,18 @@ export default function SubmitRequestPage() {
         <div className="p-4 md:p-8 h-full overflow-y-auto bg-white">
             <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-10">
                 <div className="flex-1">
-                    <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                        * Cấp bách
-                    </span>
+                    <div className="flex items-center justify-between">
+                        <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                            * Cấp bách
+                        </span>
+                        <Link
+                            href="/map"
+                            className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            Quay lại bản đồ
+                        </Link>
+                    </div>
                     <h1 className="text-3xl md:text-4xl font-extrabold mt-4 mb-2 text-slate-900 tracking-tight">
                         Gửi Yêu Cầu Cứu Trợ
                     </h1>
@@ -174,18 +248,32 @@ export default function SubmitRequestPage() {
                                         <SelectValue placeholder="Chọn loại sự cố" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="FIRE">
-                                            Hỏa hoạn / Cháy nổ
-                                        </SelectItem>
-                                        <SelectItem value="FLOOD">
-                                            Ngập lụt / Lũ quét
-                                        </SelectItem>
-                                        <SelectItem value="MEDICAL">
-                                            Cấp cứu y tế
-                                        </SelectItem>
-                                        <SelectItem value="LANDSLIDE">
-                                            Sạt lở đất
-                                        </SelectItem>
+                                        <SelectGroup>
+                                            <SelectItem value="FIRE">
+                                                Hỏa hoạn / Cháy nổ
+                                            </SelectItem>
+                                            <SelectItem value="FLOOD">
+                                                Ngập lụt / Lũ quét
+                                            </SelectItem>
+                                            <SelectItem value="EARTHQUAKE">
+                                                Động đất
+                                            </SelectItem>
+                                            <SelectItem value="MEDICAL">
+                                                Cấp cứu y tế
+                                            </SelectItem>
+                                            <SelectItem value="TRAFFIC">
+                                                Tai nạn giao thông
+                                            </SelectItem>
+                                            <SelectItem value="COLLAPSE">
+                                                Sập công trình
+                                            </SelectItem>
+                                            <SelectItem value="LANDSLIDE">
+                                                Sạt lở / Thiên tai
+                                            </SelectItem>
+                                            <SelectItem value="OTHER">
+                                                Khác
+                                            </SelectItem>
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -204,16 +292,16 @@ export default function SubmitRequestPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="CRITICAL">
-                                            CRITICAL - Cực kỳ khẩn cấp
+                                            Cực kỳ khẩn cấp
                                         </SelectItem>
                                         <SelectItem value="HIGH">
-                                            HIGH - Nguy hiểm cao
+                                            Nguy hiểm cao
                                         </SelectItem>
                                         <SelectItem value="MEDIUM">
-                                            MEDIUM - Trung bình
+                                            Trung bình
                                         </SelectItem>
                                         <SelectItem value="LOW">
-                                            LOW - Thấp
+                                            Thấp
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -224,16 +312,50 @@ export default function SubmitRequestPage() {
                             <label className="block text-sm font-semibold text-slate-800 mb-2">
                                 Địa chỉ *
                             </label>
-                            <div className="relative">
+                            <div
+                                ref={suggestionContainerRef}
+                                className="relative"
+                            >
                                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                                 <Input
                                     className="pl-10 bg-slate-50 border-slate-200 h-12 text-md rounded-xl"
                                     placeholder="Số nhà, tên đường, phường/xã..."
                                     value={address}
-                                    onChange={event =>
+                                    onChange={event => {
                                         setAddress(event.target.value)
-                                    }
+                                        setShowSuggestions(true)
+                                    }}
+                                    onFocus={() => setShowSuggestions(true)}
                                 />
+                                {showSuggestions &&
+                                    (isLoadingSuggestions ||
+                                        suggestions.length > 0) && (
+                                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-[250px] overflow-y-auto z-50 animate-in fade-in slide-in-from-top-1">
+                                            {isLoadingSuggestions && (
+                                                <div className="px-4 py-3 text-sm text-slate-500 flex items-center gap-2">
+                                                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                                    Đang tìm kiếm địa điểm...
+                                                </div>
+                                            )}
+                                            {!isLoadingSuggestions &&
+                                                suggestions.map((item, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        onClick={() =>
+                                                            handleSelectSuggestion(
+                                                                item
+                                                            )
+                                                        }
+                                                        className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-slate-50 last:border-none transition-colors cursor-pointer flex items-start gap-2"
+                                                    >
+                                                        <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                                                        <span className="text-sm text-slate-700 font-medium line-clamp-2">
+                                                            {item.display_name}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    )}
                             </div>
                         </div>
 

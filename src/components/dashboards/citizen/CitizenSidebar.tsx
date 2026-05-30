@@ -66,6 +66,7 @@ import {
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { usePathname, useRouter } from 'next/navigation'
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
 type FilterStatus = 'ALL' | 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
@@ -573,6 +574,8 @@ function CreateRequestSheet({
 
 // ─── Main CitizenSidebar ───────────────────────────────────────────────────────
 export function CitizenSidebar() {
+    const pathname = usePathname()
+    const router = useRouter()
     const { data, isLoading, isError, refetch, isFetching } =
         useCitizenRequestsQuery()
     const requests = data?.items ?? []
@@ -792,38 +795,40 @@ export function CitizenSidebar() {
                 </SidebarContent>
 
                 {/* ── FOOTER ── */}
-                <SidebarFooter className="p-3 border-t border-slate-200 bg-white shrink-0">
-                    <SidebarMenu>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton
-                                onClick={() => setCreateOpen(true)}
-                                className="h-10 w-full bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg justify-center gap-2 cursor-pointer"
-                            >
-                                <Plus className="size-4" />
-                                <span>Tạo yêu cầu cứu trợ mới</span>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
+                {pathname !== '/sos' && (
+                    <SidebarFooter className="p-3 border-t border-slate-200 bg-white shrink-0">
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    onClick={() => router.push('/sos')}
+                                    className="h-10 w-full bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg justify-center gap-2 cursor-pointer"
+                                >
+                                    <Plus className="size-4" />
+                                    <span>Tạo yêu cầu cứu trợ mới</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
 
-                    {/* Summary */}
-                    <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-slate-400 font-mono">
-                        <span>
-                            {
-                                requests.filter(r => r.status === 'PENDING')
-                                    .length
-                            }{' '}
-                            chờ xử lý
-                        </span>
-                        <span>·</span>
-                        <span>
-                            {
-                                requests.filter(r => r.status === 'IN_PROGRESS')
-                                    .length
-                            }{' '}
-                            đang ứng cứu
-                        </span>
-                    </div>
-                </SidebarFooter>
+                        {/* Summary */}
+                        <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-slate-400 font-mono">
+                            <span>
+                                {
+                                    requests.filter(r => r.status === 'PENDING')
+                                        .length
+                                }{' '}
+                                chờ xử lý
+                            </span>
+                            <span>·</span>
+                            <span>
+                                {
+                                    requests.filter(r => r.status === 'IN_PROGRESS')
+                                        .length
+                                }{' '}
+                                đang ứng cứu
+                            </span>
+                        </div>
+                    </SidebarFooter>
+                )}
 
                 <SidebarRail />
             </Sidebar>
@@ -832,12 +837,6 @@ export function CitizenSidebar() {
             <div
                 className="absolute top-0 -right-0.5 w-1.5 h-full cursor-col-resize hover:bg-emerald-500/50 transition-colors z-50"
                 onMouseDown={startResizing}
-            />
-
-            {/* Create Request Sheet */}
-            <CreateRequestSheet
-                open={createOpen}
-                onOpenChange={setCreateOpen}
             />
 
             {/* Request Detail Dialog */}

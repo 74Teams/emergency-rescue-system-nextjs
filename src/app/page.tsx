@@ -28,6 +28,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { UserAccountMenu } from '@/components/shared/UserAccountMenu'
 
 interface TeamMember {
     name: string
@@ -158,35 +159,33 @@ export default function LandingPage() {
                     </nav>
 
                     {/* Header Actions */}
-                    <div className="hidden md:flex items-center gap-3">
-                        <Link href="/login">
-                            <Button
-                                variant="ghost"
-                                className="text-slate-600 hover:bg-slate-100 hover:text-emerald-600 font-semibold transition-all"
-                            >
-                                Đăng nhập
-                            </Button>
-                        </Link>
+                    <div className="flex items-center gap-3">
                         <Link href="/map">
-                            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm transition-all">
+                            <Button className="hidden sm:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm transition-all">
                                 Bản đồ trực tuyến
                                 <ArrowRight className="size-4 ml-1" />
                             </Button>
                         </Link>
+                        <div className="hidden md:block">
+                            <UserAccountMenu showLoginWhenGuest avatarSize="md" />
+                        </div>
+                        <div className="md:hidden">
+                            <UserAccountMenu avatarSize="sm" />
+                        </div>
+                        
+                        {/* Mobile Menu Button */}
+                        <button
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className="flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-emerald-600 md:hidden"
+                            aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
+                        >
+                            {mobileMenuOpen ? (
+                                <X className="size-6" />
+                            ) : (
+                                <Menu className="size-6" />
+                            )}
+                        </button>
                     </div>
-
-                    {/* Mobile Menu Button */}
-                    <button
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-emerald-600 md:hidden"
-                        aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
-                    >
-                        {mobileMenuOpen ? (
-                            <X className="size-6" />
-                        ) : (
-                            <Menu className="size-6" />
-                        )}
-                    </button>
                 </div>
 
                 {/* Mobile Navigation Dropdown */}

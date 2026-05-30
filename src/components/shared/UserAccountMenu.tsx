@@ -119,6 +119,12 @@ export function UserAccountMenu({
               </Link>
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem asChild>
+            <Link href="/profile" className="cursor-pointer">
+              <User className="mr-2 size-4" />
+              Trang cá nhân
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
             <Settings className="mr-2 size-4" />
             Cài đặt tài khoản
