@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { UserAccountMenu } from "@/components/shared/UserAccountMenu";
+import { NotificationBell, NotificationItem } from "@/components/shared/NotificationBell";
 import {
   useDispatcherRequestsQuery,
   useRescueTeamsQuery,
@@ -34,28 +35,10 @@ export default function DispatcherDashboard() {
 
   const viewParam = searchParams?.get("view") as DispatcherView | null;
   const teamIdParam = searchParams?.get("teamId");
+  const requestIdParam = searchParams?.get("requestId");
 
   const [activeView, setActiveView] = useState<DispatcherView>("requests");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-  
-  // Sync URL params to local state then clean up URL
-  useEffect(() => {
-    let shouldReplace = false;
-
-    if (viewParam && VIEW_TITLES[viewParam as DispatcherView]) {
-      setActiveView(viewParam as DispatcherView);
-      shouldReplace = true;
-    }
-    
-    if (teamIdParam) {
-      setSelectedTeamId(teamIdParam);
-      shouldReplace = true;
-    }
-
-    if (shouldReplace) {
-      router.replace(pathname, { scroll: false });
-    }
-  }, [viewParam, teamIdParam, pathname, router]);
 
   const [statusFilter, setStatusFilter] = useState<string>("PENDING");
   const [selectedRequest, setSelectedRequest] =
@@ -72,10 +55,84 @@ export default function DispatcherDashboard() {
   const teams = teamsQuery.data ?? [];
   const missions = missionsQuery.data ?? [];
 
+  // Sync URL params to local state then clean up URL
+  useEffect(() => {
+    let shouldReplace = false;
+
+    if (viewParam && VIEW_TITLES[viewParam as DispatcherView]) {
+      setActiveView(viewParam as DispatcherView);
+      shouldReplace = true;
+    }
+
+    if (teamIdParam) {
+      setSelectedTeamId(teamIdParam);
+      shouldReplace = true;
+    }
+
+    if (requestIdParam && allRequests.length > 0) {
+      const matched = allRequests.find(r => r.id === requestIdParam);
+      if (matched) {
+        setSelectedRequest(matched);
+        setActiveView("requests");
+        setStatusFilter("ALL");
+        shouldReplace = true;
+      }
+    }
+
+    if (shouldReplace) {
+      router.replace(pathname, { scroll: false });
+    }
+  }, [viewParam, teamIdParam, requestIdParam, allRequests, pathname, router]);
+
   const filteredRequests =
     statusFilter === "ALL"
       ? allRequests
       : allRequests.filter((r) => r.status === statusFilter);
+
+  const pendingRequestsCount = allRequests.filter(r => r.status === "PENDING").length;
+
+  // Missions that the rescue team leader recently responded to (accepted = EN_ROUTE, rejected = ABORTED)
+  // Only show notifications for responses within the last 30 minutes to avoid stale noise.
+  const RECENT_THRESHOLD_MS = 30 * 60 * 1000 // 30 minutes
+  const now = Date.now()
+
+  const recentMissionUpdates = missions.filter(m => {
+    if (m.status !== "EN_ROUTE" && m.status !== "ABORTED") return false
+    // Use updateAt first, fall back to createdAt
+    const ts = m.updateAt || m.createdAt
+    if (!ts) return false
+    const elapsed = now - new Date(ts.endsWith('Z') || ts.includes('+') ? ts : ts + 'Z').getTime()
+    return elapsed >= 0 && elapsed <= RECENT_THRESHOLD_MS
+  })
+
+  const dispatcherNotifications: NotificationItem[] = [
+    ...(allRequests.filter(r => r.status === "PENDING").map(req => ({
+      id: `req_${req.id}`,
+      title: <p className="text-sm font-bold text-blue-600">Có yêu cầu cứu trợ mới!</p>,
+      description: <p className="text-xs text-slate-500">Chờ điều phối đội cứu hộ.</p>,
+      timestamp: req.createdAt || new Date().toISOString(),
+      onClick: () => setActiveView("requests")
+    }))),
+    ...(recentMissionUpdates.map(mission => {
+      const teamName = mission.rescueTeam?.teamName || teams.find(t => t.id === mission.rescueTeamId)?.teamName || 'cứu hộ'
+      const isAccepted = mission.status === 'EN_ROUTE'
+      return {
+        id: `mis_${mission.id}_${mission.status}`,
+        title: (
+          <p className={`text-sm font-bold ${isAccepted ? 'text-emerald-600' : 'text-rose-600'}`}>
+            {isAccepted ? '✅ Nhiệm vụ đã được tiếp nhận' : '❌ Nhiệm vụ bị từ chối'}
+          </p>
+        ),
+        description: (
+          <p className="text-xs text-slate-500 truncate w-full">
+            Đội <span className="font-semibold text-slate-700">{teamName}</span> vừa phản hồi
+          </p>
+        ),
+        timestamp: mission.updateAt || mission.createdAt || new Date().toISOString(),
+        onClick: () => setActiveView("missions")
+      }
+    }))
+  ]
 
   const isLoading = requestsQuery.isLoading;
 
@@ -125,14 +182,9 @@ export default function DispatcherDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative rounded-full text-slate-500 hover:text-slate-800"
-            >
-              <Bell className="size-4" />
-              <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full" />
-            </Button>
+            <NotificationBell items={dispatcherNotifications} onItemClick={(item) => {
+              if (item.onClick) item.onClick()
+            }} />
             <UserAccountMenu avatarSize="sm" />
           </div>
         </header>
@@ -157,6 +209,7 @@ export default function DispatcherDashboard() {
                 onStatusFilterChange={setStatusFilter}
                 selectedRequest={selectedRequest}
                 onSelectRequest={setSelectedRequest}
+                missions={missions}
               />
             )}
 
@@ -169,10 +222,11 @@ export default function DispatcherDashboard() {
             )}
 
             {activeView === "teams" && (
-              <TeamsPanel 
-                teams={teams} 
-                requests={allRequests} 
-                initialTeamId={selectedTeamId} 
+              <TeamsPanel
+                teams={teams}
+                requests={allRequests}
+                missions={missions}
+                initialTeamId={selectedTeamId}
               />
             )}
 

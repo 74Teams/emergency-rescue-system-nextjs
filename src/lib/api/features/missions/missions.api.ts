@@ -68,4 +68,11 @@ export const missionsApi = {
             url: apiRouteBuilders.missions.history(missionId),
         })
     },
+    addHistory(missionId: string, payload: { changedById?: string; note: string }) {
+        return apiRequest<ApiResponse<null>>({
+            method: 'POST',
+            url: apiRouteBuilders.missions.history(missionId),
+            data: payload,
+        })
+    },
 }

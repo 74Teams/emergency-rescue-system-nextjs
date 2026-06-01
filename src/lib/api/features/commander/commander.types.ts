@@ -22,4 +22,5 @@ export interface AccountQueryParams extends PaginationQuery {
 export interface UserWithPendingCheck extends ProfileResponse {
   isActive: boolean;
   isPendingApproval: boolean;
+  createdAt?: string;
 }

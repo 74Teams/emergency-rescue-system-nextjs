@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
     Activity,
     Map as MapIcon,
@@ -18,6 +18,7 @@ import {
     LogOut,
     Settings,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { format } from 'date-fns'
@@ -35,6 +36,13 @@ import {
     CardTitle,
 } from '@/components/ui/card'
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog'
+import {
     Sidebar,
     SidebarContent,
     SidebarHeader,
@@ -43,6 +51,7 @@ import {
     SidebarMenuItem,
     SidebarProvider,
     SidebarFooter,
+    SidebarTrigger,
 } from '@/components/ui/sidebar'
 import {
     DropdownMenu,
@@ -55,18 +64,26 @@ import {
 
 // APIs
 import { useLogout } from '@/lib/api/use-auth'
+import RescuerProfile from '@/components/dashboards/rescuer/RescuerProfile'
+import RescuerCurrentMission from '@/components/dashboards/rescuer/RescuerCurrentMission'
+import LeaveRequestModal from '@/components/dashboards/rescuer/LeaveRequestModal'
+import { NotificationBell, NotificationItem } from '@/components/shared/NotificationBell'
+import { useMyLeaveRequests } from '@/lib/api/features/leaveRequests/leaveRequests.queries'
 import { useProfileQuery } from '@/lib/api/features/auth/auth.queries'
 import {
     useRescueTeamDetail,
     useTeamMissions,
     useRescueTeamMembers,
+    useToggleUserStatus,
 } from '@/lib/api/features/commander/commander-dashboard.queries'
+import { Switch } from '@/components/ui/switch'
 import type { MissionSummary } from '@/lib/api/features/missions/missions.types'
 import { getInitials } from '@/lib/utils/initials'
+import { dictStatus, dictPriority, dictType } from '@/constants/dictionary'
 
 // Dynamic map import
-const MapView = dynamic(
-    () => import('@/components/dashboards/commander/MapView'),
+const RescuerMapView = dynamic(
+    () => import('@/components/dashboards/rescuer/RescuerMapView'),
     {
         ssr: false,
         loading: () => (
@@ -96,6 +113,82 @@ export default function RescuerDashboard() {
     const { data: teamMembers, isLoading: isLoadingMembers } =
         useRescueTeamMembers(teamId || null)
 
+    const { mutate: toggleUserStatus, isPending: isTogglingStatus } = useToggleUserStatus()
+
+    const currentUserMember = teamMembers?.find((m: any) => m.id === profile?.id)
+    const isUserActive = currentUserMember?.isActive ?? true
+
+    const { data: leaveRequests } = useMyLeaveRequests()
+    const todayStr = new Date().toISOString().split('T')[0]
+
+    const recentNotifications = useMemo(() => {
+        if (!leaveRequests) return []
+        return leaveRequests.filter((req: any) => {
+            if (req.status === 'PENDING') return false
+            const updatedDateStr = req.updatedAt.split('T')[0]
+            return updatedDateStr === todayStr
+        })
+    }, [leaveRequests, todayStr])
+
+    const recentMissionUpdates = useMemo(() => {
+        if (!missions) return []
+        const RECENT_THRESHOLD_MS = 30 * 60 * 1000 // 30 mins
+        const now = Date.now()
+        return missions.filter((m: any) => {
+            if (m.status !== "EN_ROUTE" && m.status !== "ABORTED") return false
+            const ts = m.updateAt || (m as any).updatedAt || m.createdAt || (m as any).createAt
+            if (!ts) return false
+            // Backend sends Local Time (UTC+7) but might falsely append 'Z' because DateTimeKind is Utc
+            const cleanTs = ts.replace('Z', '').replace('+00:00', '')
+            const tsWithZone = cleanTs.includes('+') ? cleanTs : cleanTs + '+07:00'
+            const elapsed = now - new Date(tsWithZone).getTime()
+            return elapsed >= 0 && elapsed <= RECENT_THRESHOLD_MS
+        })
+    }, [missions])
+
+    const rescuerNotifications: NotificationItem[] = useMemo(() => {
+        const items: NotificationItem[] = []
+        if (recentNotifications.length > 0) {
+            items.push(...recentNotifications.map((req: any) => ({
+                id: `leave_${req.id}_${req.status}`,
+                title: <p className={cn("text-sm font-bold", req.status === 'APPROVED' ? "text-emerald-600" : "text-rose-600")}>Đơn xin phép {req.status === 'APPROVED' ? 'đã được duyệt' : 'bị từ chối'}</p>,
+                description: (
+                    <>
+                        <p className="text-xs text-slate-500">Nghỉ từ {format(new Date(req.startTime), 'dd/MM/yyyy')} đến {format(new Date(req.endTime), 'dd/MM/yyyy')}</p>
+                        {req.note && <p className="text-[10px] text-slate-400 mt-1 bg-slate-50 p-1.5 rounded w-full">Ghi chú: {req.note}</p>}
+                    </>
+                ),
+                timestamp: req.updatedAt || new Date().toISOString(),
+                onClick: () => setActiveTab('profile')
+            })))
+        }
+
+        if (recentMissionUpdates.length > 0) {
+            items.push(...recentMissionUpdates.map((mission: any) => {
+                const isAccepted = mission.status === 'EN_ROUTE'
+                const ts = mission.updateAt || mission.updatedAt || mission.createdAt || mission.createAt || new Date().toISOString()
+                return {
+                    id: `mis_${mission.id}_${mission.status}_${ts}`,
+                    title: (
+                        <p className={cn("text-sm font-bold", isAccepted ? 'text-emerald-600' : 'text-rose-600')}>
+                            {isAccepted ? '✅ Nhiệm vụ đã tiếp nhận' : '❌ Nhiệm vụ bị hủy'}
+                        </p>
+                    ),
+                    description: (
+                        <p className="text-xs text-slate-500 truncate w-full">
+                            Đội trưởng vừa {isAccepted ? 'xác nhận di chuyển' : 'hủy/từ chối'} nhiệm vụ.
+                        </p>
+                    ),
+                    timestamp: mission.updateAt || mission.createdAt || new Date().toISOString(),
+                    onClick: () => setActiveTab('current_mission')
+                }
+            }))
+        }
+
+        // Sắp xếp lại theo thời gian mới nhất
+        return items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    }, [recentNotifications, recentMissionUpdates])
+
     // Derived states
     const activeMissions = useMemo(() => {
         return (
@@ -122,6 +215,41 @@ export default function RescuerDashboard() {
     ).length
     // Giả sử mỗi mission ~2 giờ (để demo stats)
     const totalHours = totalCompleted * 2
+
+    const prevMissionIdRef = useRef<string | null>(null)
+    const prevMissionStatusRef = useRef<string | null>(null)
+
+    useEffect(() => {
+        if (!missions) return
+
+        const currentId = currentMission?.id || null
+        const currentStatus = currentMission?.status || null
+
+        // If a previously ASSIGNED mission becomes EN_ROUTE
+        if (
+            currentId &&
+            currentId === prevMissionIdRef.current &&
+            prevMissionStatusRef.current === 'ASSIGNED' &&
+            currentStatus === 'EN_ROUTE'
+        ) {
+            toast.info('Đội trưởng đã tiếp nhận nhiệm vụ!', {
+                description: 'Nhiệm vụ đã chuyển sang trạng thái "Đang di chuyển", hãy chuẩn bị xuất phát.',
+            })
+        }
+
+        // Check if an active mission was aborted
+        if (prevMissionIdRef.current && !currentId) {
+            const aborted = historyMissions.find(m => m.id === prevMissionIdRef.current && m.status === 'ABORTED')
+            if (aborted) {
+                toast.error('Nhiệm vụ đã bị hủy!', {
+                    description: 'Đội trưởng hoặc Điều phối viên đã hủy nhiệm vụ.',
+                })
+            }
+        }
+
+        prevMissionIdRef.current = currentId
+        prevMissionStatusRef.current = currentStatus
+    }, [currentMission, historyMissions, missions])
 
     const isGlobalLoading =
         isLoadingProfile ||
@@ -309,8 +437,9 @@ export default function RescuerDashboard() {
                     </SidebarFooter>
                 </Sidebar>
 
-                <main className="flex-1 flex flex-col relative w-full h-full overflow-hidden">
-                    <header className="flex justify-between items-center px-8 w-full sticky top-0 z-40 bg-white/70 backdrop-blur-xl h-20 border-b border-slate-200/60 shadow-sm">
+                <main className="flex-1 flex flex-col min-w-0 bg-slate-50 h-screen relative">
+                    <header className="sticky top-0 z-10 flex h-20 shrink-0 items-center gap-4 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl px-6 lg:px-10">
+                        <SidebarTrigger className="-ml-2 mr-2 md:hidden" />
                         <div className="flex items-center gap-6 flex-1">
                             <h2 className="text-xl font-extrabold text-slate-800 tracking-tight hidden lg:block">
                                 {activeTab === 'overview' &&
@@ -326,16 +455,26 @@ export default function RescuerDashboard() {
                             </h2>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="rounded-full relative text-slate-500 hover:text-orange-600"
-                            >
-                                <Bell size={20} strokeWidth={2.5} />
-                                {currentMission && (
-                                    <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-                                )}
-                            </Button>
+                            {/* Trạng thái hoạt động cá nhân */}
+                            {profile && (
+                                <div className="flex items-center gap-2 mr-2 bg-white/50 px-3 py-1.5 rounded-full border border-slate-200">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest hidden sm:inline-block">
+                                        {isUserActive ? 'Trực tuyến' : 'Ngoại tuyến'}
+                                    </span>
+                                    <Switch
+                                        checked={isUserActive}
+                                        onCheckedChange={(checked) => {
+                                            toggleUserStatus({ userId: profile.id, isActive: checked })
+                                        }}
+                                        disabled={isTogglingStatus}
+                                        className="data-[state=checked]:bg-emerald-500"
+                                    />
+                                </div>
+                            )}
+
+                            <LeaveRequestModal />
+
+                            <NotificationBell items={rescuerNotifications} />
                         </div>
                     </header>
 
@@ -440,215 +579,13 @@ export default function RescuerDashboard() {
 
                             {/* TAB: CURRENT MISSION */}
                             {activeTab === 'current_mission' && (
-                                <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    {currentMission ? (
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                            <Card className="lg:col-span-2">
-                                                <CardHeader>
-                                                    <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <CardTitle className="text-2xl font-black text-slate-800">
-                                                                Nhiệm vụ #
-                                                                {currentMission.id.slice(
-                                                                    -8
-                                                                )}
-                                                            </CardTitle>
-                                                            <CardDescription className="flex items-center gap-2 mt-2 text-slate-500 font-medium">
-                                                                <Clock
-                                                                    size={16}
-                                                                />{' '}
-                                                                Tạo lúc:{' '}
-                                                                {format(
-                                                                    new Date(
-                                                                        currentMission.createdAt ||
-                                                                            ''
-                                                                    ),
-                                                                    'HH:mm dd/MM/yyyy',
-                                                                    {
-                                                                        locale: vi,
-                                                                    }
-                                                                )}
-                                                            </CardDescription>
-                                                        </div>
-                                                        <Badge className="bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase tracking-wider">
-                                                            {
-                                                                currentMission.status
-                                                            }
-                                                        </Badge>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent className="space-y-6">
-                                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm text-slate-700 leading-relaxed">
-                                                        <strong>
-                                                            Request ID:
-                                                        </strong>{' '}
-                                                        {
-                                                            currentMission.requestId
-                                                        }{' '}
-                                                        <br />
-                                                        Đây là nhiệm vụ đang
-                                                        được phân công cho đội
-                                                        của bạn. Các chi tiết
-                                                        khác sẽ được lấy từ API
-                                                        theo yêu cầu.
-                                                    </div>
-
-                                                    <div>
-                                                        <h4 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
-                                                            <ListTodo
-                                                                size={18}
-                                                                className="text-orange-500"
-                                                            />{' '}
-                                                            Checklist Nhiệm vụ
-                                                            (Ví dụ)
-                                                        </h4>
-                                                        <div className="space-y-3">
-                                                            {[
-                                                                {
-                                                                    label: 'Xác nhận nhận nhiệm vụ',
-                                                                    done:
-                                                                        currentMission.status !==
-                                                                        'ASSIGNED',
-                                                                },
-                                                                {
-                                                                    label: 'Di chuyển đến điểm tập kết gần nhất',
-                                                                    done: [
-                                                                        'ON_SITE',
-                                                                        'IN_PROGRESS',
-                                                                        'COMPLETED',
-                                                                    ].includes(
-                                                                        currentMission.status
-                                                                    ),
-                                                                },
-                                                                {
-                                                                    label: 'Tiếp cận hiện trường và liên lạc nạn nhân',
-                                                                    done: [
-                                                                        'IN_PROGRESS',
-                                                                        'COMPLETED',
-                                                                    ].includes(
-                                                                        currentMission.status
-                                                                    ),
-                                                                },
-                                                                {
-                                                                    label: 'Đưa nạn nhân đến nơi an toàn',
-                                                                    done:
-                                                                        currentMission.status ===
-                                                                        'COMPLETED',
-                                                                },
-                                                                {
-                                                                    label: 'Báo cáo hoàn thành và di chuyển về base',
-                                                                    done:
-                                                                        currentMission.status ===
-                                                                        'COMPLETED',
-                                                                },
-                                                            ].map(
-                                                                (item, idx) => (
-                                                                    <div
-                                                                        key={
-                                                                            idx
-                                                                        }
-                                                                        className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-orange-300 transition-colors cursor-pointer"
-                                                                    >
-                                                                        <div
-                                                                            className={cn(
-                                                                                'w-5 h-5 rounded flex items-center justify-center border',
-                                                                                item.done
-                                                                                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                                                                                    : 'border-slate-300 text-transparent'
-                                                                            )}
-                                                                        >
-                                                                            <CheckSquare
-                                                                                size={
-                                                                                    14
-                                                                                }
-                                                                            />
-                                                                        </div>
-                                                                        <span
-                                                                            className={cn(
-                                                                                'font-medium',
-                                                                                item.done
-                                                                                    ? 'text-slate-400 line-through'
-                                                                                    : 'text-slate-700'
-                                                                            )}
-                                                                        >
-                                                                            {
-                                                                                item.label
-                                                                            }
-                                                                        </span>
-                                                                    </div>
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-
-                                            <Card>
-                                                <CardHeader>
-                                                    <CardTitle className="text-lg font-bold">
-                                                        Thành viên đội (
-                                                        {teamMembers?.length ||
-                                                            0}
-                                                        )
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="space-y-4">
-                                                    {teamMembers?.map(
-                                                        (member: any) => (
-                                                            <div
-                                                                key={member.id}
-                                                                className="flex items-center gap-3"
-                                                            >
-                                                                <Avatar>
-                                                                    <AvatarFallback className="font-bold bg-slate-100">
-                                                                        {getInitials(
-                                                                            member.fullName
-                                                                        )}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                                <div>
-                                                                    <p className="font-bold text-sm text-slate-800">
-                                                                        {
-                                                                            member.fullName
-                                                                        }
-                                                                    </p>
-                                                                    <p className="text-xs text-slate-500 font-medium">
-                                                                        Cứu hộ
-                                                                        viên
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    )}
-                                                </CardContent>
-                                            </Card>
-                                        </div>
-                                    ) : (
-                                        <Card className="border-dashed border-2 py-16 shadow-none bg-transparent">
-                                            <CardContent className="flex flex-col items-center justify-center text-center">
-                                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                                                    <CheckCircle className="h-10 w-10 text-slate-400" />
-                                                </div>
-                                                <CardTitle className="text-xl">
-                                                    Không có nhiệm vụ nào đang
-                                                    diễn ra
-                                                </CardTitle>
-                                                <CardDescription className="mt-2 text-base">
-                                                    Đội của bạn hiện đang ở
-                                                    trạng thái Standby. Hãy nghỉ
-                                                    ngơi và chờ lệnh điều động
-                                                    tiếp theo.
-                                                </CardDescription>
-                                            </CardContent>
-                                        </Card>
-                                    )}
-                                </section>
+                                <RescuerCurrentMission currentMission={currentMission} teamMembers={teamMembers} />
                             )}
 
                             {/* TAB: REQUESTS MAP */}
                             {activeTab === 'requests_map' && (
-                                <section className="h-[600px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
-                                    <MapView />
+                                <section className="h-[700px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 relative bg-slate-100">
+                                    <RescuerMapView currentMission={currentMission} teamLocation={teamDetails?.baseLocation || null} />
                                 </section>
                             )}
 
@@ -673,76 +610,101 @@ export default function RescuerDashboard() {
                                                 </div>
                                             ) : (
                                                 <div className="space-y-4">
-                                                    {historyMissions.map(
-                                                        (
-                                                            mission: MissionSummary
-                                                        ) => (
-                                                            <div
-                                                                key={mission.id}
-                                                                className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
-                                                            >
+                                                    {historyMissions.map((mission: MissionSummary) => (
+                                                        <Dialog key={mission.id}>
+                                                            <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
                                                                 <div className="flex items-start gap-4 mb-4 md:mb-0">
-                                                                    <div
-                                                                        className={cn(
-                                                                            'p-3 rounded-xl',
-                                                                            mission.status ===
-                                                                                'COMPLETED'
-                                                                                ? 'bg-emerald-100 text-emerald-600'
-                                                                                : 'bg-rose-100 text-rose-600'
-                                                                        )}
-                                                                    >
-                                                                        {mission.status ===
-                                                                        'COMPLETED' ? (
-                                                                            <CheckCircle
-                                                                                size={
-                                                                                    24
-                                                                                }
-                                                                            />
-                                                                        ) : (
-                                                                            <ShieldAlert
-                                                                                size={
-                                                                                    24
-                                                                                }
-                                                                            />
-                                                                        )}
+                                                                    <div className={cn('p-3 rounded-xl', mission.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600')}>
+                                                                        {mission.status === 'COMPLETED' ? <CheckCircle size={24} /> : <ShieldAlert size={24} />}
                                                                     </div>
                                                                     <div>
                                                                         <h4 className="font-bold text-slate-800 text-lg">
-                                                                            Nhiệm
-                                                                            vụ #
-                                                                            {mission.id.slice(
-                                                                                -6
-                                                                            )}
+                                                                            {mission.request?.location?.address || `Nhiệm vụ #${mission.id.slice(-6)}`}
                                                                         </h4>
-                                                                        <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
-                                                                            <MapPin
-                                                                                size={
-                                                                                    14
-                                                                                }
-                                                                            />{' '}
-                                                                            {
-                                                                                mission.requestId
-                                                                            }
-                                                                        </p>
-                                                                        <p className="text-xs text-slate-400 mt-1">
-                                                                            Trạng
-                                                                            thái
-                                                                            cuối:{' '}
-                                                                            {
-                                                                                mission.status
-                                                                            }
+                                                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                                            <Badge variant="outline" className="text-slate-500 font-medium">
+                                                                                {dictType[mission.request?.emergencyType || ''] || 'Khác'}
+                                                                            </Badge>
+                                                                            <Badge variant="outline" className={cn(
+                                                                                "font-medium",
+                                                                                mission.request?.priority === 'CRITICAL' || mission.request?.priority === 'HIGH' ? "text-rose-500 border-rose-200" : "text-amber-500 border-amber-200"
+                                                                            )}>
+                                                                                Mức độ: {dictPriority[mission.request?.priority || ''] || mission.request?.priority}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        <p className="text-xs text-slate-400 mt-2 font-medium">
+                                                                            Trạng thái: <span className={mission.status === 'COMPLETED' ? "text-emerald-600" : "text-rose-600"}>{dictStatus[mission.status as keyof typeof dictStatus] || mission.status}</span>
+                                                                            {mission.endTime && ` • Hoàn thành: ${format(new Date(mission.endTime), 'HH:mm dd/MM/yyyy')}`}
                                                                         </p>
                                                                     </div>
                                                                 </div>
-                                                                <Button
-                                                                    variant="outline"
-                                                                    className="font-bold text-slate-600"
-                                                                >
-                                                                    Xem chi tiết
-                                                                </Button>
+                                                                <DialogTrigger asChild>
+                                                                    <Button variant="outline" className="font-bold text-slate-600 self-start md:self-center">
+                                                                        Xem chi tiết
+                                                                    </Button>
+                                                                </DialogTrigger>
                                                             </div>
-                                                        )
-                                                    )}
+                                                            <DialogContent className="sm:max-w-[500px] rounded-2xl">
+                                                                <DialogHeader>
+                                                                    <DialogTitle className="text-xl font-black text-slate-800 flex items-center gap-2">
+                                                                        {mission.status === 'COMPLETED' ? <CheckCircle className="text-emerald-500" /> : <ShieldAlert className="text-rose-500" />}
+                                                                        Chi tiết nhiệm vụ
+                                                                    </DialogTitle>
+                                                                </DialogHeader>
+                                                                <div className="mt-4 space-y-4">
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mã NV</p>
+                                                                            <p className="font-bold text-slate-800 text-sm">#{mission.id.slice(-8)}</p>
+                                                                        </div>
+                                                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Trạng thái</p>
+                                                                            <p className={cn("font-bold text-sm", mission.status === 'COMPLETED' ? "text-emerald-600" : "text-rose-600")}>
+                                                                                {dictStatus[mission.status as keyof typeof dictStatus] || mission.status}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm font-bold text-slate-800 mb-1">Địa chỉ hiện trường</p>
+                                                                        <div className="flex items-start gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                                            <MapPin size={16} className="text-rose-500 mt-0.5 shrink-0" />
+                                                                            <p className="text-sm text-slate-600">{mission.request?.location?.address || 'Không có thông tin địa chỉ'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        <div>
+                                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Loại sự cố</p>
+                                                                            <Badge variant="secondary" className="font-medium bg-slate-100">
+                                                                                {dictType[mission.request?.emergencyType || ''] || 'Khác'}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mức độ</p>
+                                                                            <Badge variant="secondary" className="font-medium bg-slate-100">
+                                                                                {dictPriority[mission.request?.priority || ''] || 'Bình thường'}
+                                                                            </Badge>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mô tả sự cố</p>
+                                                                        <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 min-h-[60px]">
+                                                                            {mission.request?.description || 'Không có mô tả thêm.'}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                                                                        <div>
+                                                                            <p className="text-xs text-slate-500 flex items-center gap-1"><Clock size={12} /> Thời gian tạo</p>
+                                                                            <p className="text-sm font-semibold text-slate-700 mt-0.5">{mission.createdAt ? format(new Date(mission.createdAt), 'HH:mm dd/MM/yyyy') : '--'}</p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-xs text-slate-500 flex items-center gap-1"><CheckSquare size={12} /> Hoàn thành lúc</p>
+                                                                            <p className="text-sm font-semibold text-slate-700 mt-0.5">{mission.endTime ? format(new Date(mission.endTime), 'HH:mm dd/MM/yyyy') : '--'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    ))}
                                                 </div>
                                             )}
                                         </CardContent>
@@ -752,184 +714,7 @@ export default function RescuerDashboard() {
 
                             {/* TAB: PROFILE */}
                             {activeTab === 'profile' && (
-                                <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle>
-                                                    Hồ sơ cá nhân
-                                                </CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="space-y-6">
-                                                <div className="flex items-center gap-4">
-                                                    <Avatar className="w-20 h-20">
-                                                        <AvatarImage
-                                                            src={
-                                                                profile?.avatarUrl
-                                                            }
-                                                        />
-                                                        <AvatarFallback className="text-2xl bg-orange-100 text-orange-600 font-bold">
-                                                            {getInitials(
-                                                                profile?.fullName ||
-                                                                    'RS'
-                                                            )}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <h3 className="text-xl font-bold text-slate-800">
-                                                            {profile?.fullName}
-                                                        </h3>
-                                                        <p className="text-slate-500 font-medium uppercase text-xs mt-1">
-                                                            {profile?.roles?.join(
-                                                                ', '
-                                                            )}
-                                                        </p>
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="mt-2 text-emerald-600 border-emerald-200 bg-emerald-50"
-                                                        >
-                                                            Đang hoạt động
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-3 pt-4 border-t border-slate-100">
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-slate-500 font-medium">
-                                                            Email
-                                                        </span>
-                                                        <span className="font-bold text-slate-800">
-                                                            {profile?.email}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-slate-500 font-medium">
-                                                            Số điện thoại
-                                                        </span>
-                                                        <span className="font-bold text-slate-800">
-                                                            {profile?.phoneNumber ||
-                                                                'Chưa cập nhật'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle className="flex items-center gap-2">
-                                                    <Shield className="text-orange-500" />{' '}
-                                                    Thông tin Đội
-                                                </CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {teamDetails ? (
-                                                    <div className="space-y-4">
-                                                        <h3 className="text-xl font-bold text-slate-800">
-                                                            {
-                                                                teamDetails.teamName
-                                                            }
-                                                        </h3>
-                                                        <p className="text-sm text-slate-600">
-                                                            {teamDetails.description ||
-                                                                'Không có mô tả cho đội này.'}
-                                                        </p>
-
-                                                        <div className="flex justify-between text-sm mt-4">
-                                                            <span className="text-slate-500 font-medium">
-                                                                Đội trưởng
-                                                            </span>
-                                                            <span className="font-bold text-slate-800">
-                                                                {teamDetails
-                                                                    .leader
-                                                                    ?.fullName ||
-                                                                    'Chưa phân công'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-slate-500 font-medium">
-                                                                Thành viên
-                                                            </span>
-                                                            <span className="font-bold text-slate-800">
-                                                                {teamDetails.memberCount ||
-                                                                    0}{' '}
-                                                                người
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex justify-between text-sm">
-                                                            <span className="text-slate-500 font-medium">
-                                                                Trạng thái đội
-                                                            </span>
-                                                            <span className="font-bold text-orange-600">
-                                                                {
-                                                                    teamDetails.status
-                                                                }
-                                                            </span>
-                                                        </div>
-
-                                                        {teamMembers &&
-                                                            teamMembers.length >
-                                                                0 && (
-                                                                <div className="mt-6 pt-6 border-t border-slate-100">
-                                                                    <h4 className="font-bold text-sm text-slate-800 mb-4">
-                                                                        Danh
-                                                                        sách
-                                                                        thành
-                                                                        viên (
-                                                                        {
-                                                                            teamMembers.length
-                                                                        }
-                                                                        )
-                                                                    </h4>
-                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                                        {teamMembers.map(
-                                                                            (
-                                                                                member: any
-                                                                            ) => (
-                                                                                <div
-                                                                                    key={
-                                                                                        member.id
-                                                                                    }
-                                                                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors"
-                                                                                >
-                                                                                    <Avatar className="w-10 h-10">
-                                                                                        <AvatarFallback className="text-sm font-bold bg-orange-100 text-orange-700">
-                                                                                            {getInitials(
-                                                                                                member.fullName
-                                                                                            )}
-                                                                                        </AvatarFallback>
-                                                                                    </Avatar>
-                                                                                    <div className="overflow-hidden">
-                                                                                        <p className="font-bold text-sm text-slate-800 truncate">
-                                                                                            {
-                                                                                                member.fullName
-                                                                                            }
-                                                                                        </p>
-                                                                                        <p className="text-xs text-slate-500 truncate">
-                                                                                            {member.id ===
-                                                                                            teamDetails
-                                                                                                .leader
-                                                                                                ?.id
-                                                                                                ? 'Đội trưởng'
-                                                                                                : 'Cứu hộ viên'}
-                                                                                        </p>
-                                                                                    </div>
-                                                                                </div>
-                                                                            )
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-slate-500 text-sm">
-                                                        Bạn chưa được phân bổ
-                                                        vào đội cứu hộ nào.
-                                                    </div>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-                                </section>
+                                <RescuerProfile profile={profile} teamDetails={teamDetails} historyMissions={historyMissions} isUserActive={isUserActive} />
                             )}
                         </div>
                     </div>

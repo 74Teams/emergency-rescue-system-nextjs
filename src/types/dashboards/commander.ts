@@ -18,7 +18,7 @@ export const TEAM_STATUS_BADGES: Record<TeamStatus, BadgeConfig> = {
       "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-200 font-medium",
   },
   ON_MISSION: {
-    text: "Đang nhiệm vụ",
+    text: "Đang làm nhiệm vụ",
     variant: "default",
     color:
       "bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-200 font-medium",

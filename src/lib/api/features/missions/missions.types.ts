@@ -25,6 +25,19 @@ export interface MissionSummary {
         id: string
         teamName?: string
     }
+    request?: {
+        id: string
+        emergencyType: string
+        priority: string
+        status: string
+        description?: string
+        location?: {
+            id?: string
+            address: string
+            latitude: number
+            longitude: number
+        }
+    }
 }
 
 export interface CreateMissionInput {

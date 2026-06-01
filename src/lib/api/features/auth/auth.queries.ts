@@ -26,7 +26,7 @@ export function useProfileQuery() {
       return res.data;
     },
     enabled: !!getStoredAccessToken(),
-    staleTime: 5 * 60 * 1000, // cache-stale-time
+    staleTime: 60 * 1000, // 60s — rescueTeamId cần được refresh sớm
   });
 }
 
