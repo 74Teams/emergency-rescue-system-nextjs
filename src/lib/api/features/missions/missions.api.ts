@@ -9,6 +9,15 @@ import {
     MissionTimelineItem,
 } from './missions.types'
 
+const missionStatusToNumber: Record<string, number> = {
+    ASSIGNED: 1,
+    EN_ROUTE: 2,
+    ON_SITE: 3,
+    IN_PROGRESS: 4,
+    COMPLETED: 5,
+    ABORTED: 6,
+}
+
 export const missionsApi = {
     create(payload: CreateMissionInput) {
         return apiRequest<ApiResponse<{ id: string }>>({
@@ -36,10 +45,17 @@ export const missionsApi = {
         })
     },
     updateStatus(missionId: string, payload: UpdateMissionStatusInput) {
+        const numericStatus = typeof payload.status === 'number'
+            ? payload.status
+            : missionStatusToNumber[payload.status as string];
+
         return apiRequest<ApiResponse<null>>({
             method: 'PUT',
             url: apiRouteBuilders.missions.status(missionId),
-            data: payload,
+            data: {
+                ...payload,
+                status: numericStatus,
+            },
         })
     },
     finish(
@@ -66,6 +82,13 @@ export const missionsApi = {
         return apiRequest<ApiResponse<MissionTimelineItem[]>>({
             method: 'GET',
             url: apiRouteBuilders.missions.history(missionId),
+        })
+    },
+    addHistory(missionId: string, payload: { changedById?: string; note: string }) {
+        return apiRequest<ApiResponse<null>>({
+            method: 'POST',
+            url: apiRouteBuilders.missions.history(missionId),
+            data: payload,
         })
     },
 }

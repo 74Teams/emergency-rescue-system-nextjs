@@ -64,6 +64,9 @@ export function normalizeMission(m: MissionSummary): MissionSummary {
       numericMissionStatusMap,
       "ASSIGNED",
     ),
+    createdAt: m.createdAt || m.createAt,
+    rescueTeamId: m.rescueTeamId || m.rescueTeam?.id || "",
+    dispatcherId: m.dispatcherId || m.dispatcher?.id,
   };
 }
 

@@ -27,7 +27,7 @@ import {
   emergencyTypeLabels,
 } from "@/lib/api/features/requests/dispatcher.queries";
 import { useProfileQuery } from "@/lib/api/use-profile";
-import type { RescueTeamSummary, RequestSummary } from "@/lib/api/types";
+import type { RescueTeamSummary, RequestSummary, MissionSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -49,6 +49,7 @@ import { getApiErrorMessage } from "@/lib/api/client";
 interface Props {
   teams: RescueTeamSummary[];
   requests?: RequestSummary[];
+  missions?: MissionSummary[];
   initialTeamId?: string | null;
 }
 
@@ -87,14 +88,17 @@ const teamStatusLabels: Record<
 // ─── TEAM LIST VIEW ─────────────────────────────────────
 function TeamListView({
   teams,
+  missions = [],
   onSelectTeam,
 }: {
   teams: RescueTeamSummary[];
+  missions?: MissionSummary[];
   onSelectTeam: (team: RescueTeamSummary) => void;
 }) {
-  const active = teams.filter(
-    (t) => t.status === "AVAILABLE" || t.status === "ON_MISSION",
-  ).length;
+  const active = teams.filter((t) => {
+    const hasActiveMission = missions.some(m => m.rescueTeamId === t.id && ["ASSIGNED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS"].includes(m.status));
+    return t.status === "AVAILABLE" || t.status === "ON_MISSION" || hasActiveMission;
+  }).length;
   const totalMembers = teams.reduce((sum, t) => sum + (t.memberCount ?? 0), 0);
 
   return (
@@ -134,8 +138,11 @@ function TeamListView({
       <ScrollArea className="h-[calc(100vh-380px)]">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {teams.map((team) => {
-            const st =
-              teamStatusLabels[team.status] ?? teamStatusLabels.INACTIVE;
+            const hasActiveMission = missions.some(m => m.rescueTeamId === team.id && ["ASSIGNED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS"].includes(m.status));
+            const st = hasActiveMission 
+              ? teamStatusLabels.ON_MISSION 
+              : (teamStatusLabels[team.status] ?? teamStatusLabels.INACTIVE);
+            
             return (
               <button
                 type="button"
@@ -194,15 +201,19 @@ function TeamListView({
 function TeamDetailView({
   team,
   requests = [],
+  missions = [],
   onBack,
 }: {
   team: RescueTeamSummary;
   requests?: RequestSummary[];
+  missions?: MissionSummary[];
   onBack: () => void;
 }) {
   const membersQuery = useTeamMembersQuery(team.id);
   const members = membersQuery.data ?? [];
-  const st = teamStatusLabels[team.status] ?? teamStatusLabels.INACTIVE;
+  const hasActiveMission = missions.some(m => m.rescueTeamId === team.id && ["ASSIGNED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS"].includes(m.status));
+  const st = hasActiveMission ? teamStatusLabels.ON_MISSION : (teamStatusLabels[team.status] ?? teamStatusLabels.INACTIVE);
+  const isAvailable = team.status === "AVAILABLE" && !hasActiveMission;
 
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState("");
@@ -285,7 +296,7 @@ function TeamDetailView({
               >
                 {st.label}
               </Badge>
-              {team.status === "AVAILABLE" && (
+              {isAvailable && (
                 <Button 
                   onClick={() => setAssignDialogOpen(true)}
                   className="bg-[#003da5] hover:bg-blue-800 text-white shadow-sm mt-1" 
@@ -549,7 +560,7 @@ function TeamDetailView({
   );
 }
 
-export function TeamsPanel({ teams, requests = [], initialTeamId }: Props) {
+export function TeamsPanel({ teams, requests = [], missions = [], initialTeamId }: Props) {
   const [selectedTeam, setSelectedTeam] = useState<RescueTeamSummary | null>(null);
 
   useEffect(() => {
@@ -564,15 +575,13 @@ export function TeamsPanel({ teams, requests = [], initialTeamId }: Props) {
       <TeamDetailView
         team={selectedTeam}
         requests={requests}
+        missions={missions}
         onBack={() => {
           setSelectedTeam(null);
-          // If they came from URL directly, going back shouldn't just keep them stuck 
-          // We don't have direct access to clear URL param here without router, 
-          // but just setting selectedTeam to null reverts to list view which is correct UX.
         }}
       />
     );
   }
 
-  return <TeamListView teams={teams} onSelectTeam={setSelectedTeam} />;
+  return <TeamListView teams={teams} missions={missions} onSelectTeam={setSelectedTeam} />;
 }

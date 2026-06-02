@@ -12,6 +12,7 @@ import type {
 import { apiQueryKeys } from '../../query-keys'
 import { apiRequest } from '../../client'
 import { apiRouteBuilders } from '../../endpoints'
+import { normalizeMission } from '../requests/dispatcher.queries'
 
 type RescueTeamsResponse = ApiResponse<RescueTeamSummary[]>
 
@@ -111,12 +112,19 @@ export function useTeamMissions(teamId: string) {
             return await rescueTeamsApi.missions(teamId)
         },
         enabled: !!teamId,
-        refetchInterval: 30000,
-        staleTime: 2 * 60 * 1000,
+        // Poll every 10s so leader sees new missions quickly
+        refetchInterval: 10000,
+        staleTime: 5000,
     })
 
+    // Normalize numeric status → string (backend returns 1,2,3... not 'ASSIGNED','EN_ROUTE'...)
+    const rawData = query.data?.data ?? []
+    const data = Array.isArray(rawData)
+        ? rawData.map((m: Parameters<typeof normalizeMission>[0]) => normalizeMission(m))
+        : []
+
     return {
-        data: query.data?.data ?? [],
+        data,
         isLoading: query.isLoading,
         isError: query.isError,
         error: query.error,
@@ -202,6 +210,7 @@ export function useToggleUserStatus() {
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['commander', 'users'] })
+            queryClient.invalidateQueries({ queryKey: ['rescue-teams'] })
         },
     })
 }

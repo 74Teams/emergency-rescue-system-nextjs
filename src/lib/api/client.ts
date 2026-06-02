@@ -51,8 +51,28 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+const isoDateWithoutZRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
+
+function appendZToDates(obj: unknown) {
+  if (obj === null || typeof obj !== "object") return;
+  
+  for (const key of Object.keys(obj as Record<string, unknown>)) {
+    const value = (obj as Record<string, unknown>)[key];
+    if (typeof value === "string" && isoDateWithoutZRegex.test(value)) {
+      (obj as Record<string, unknown>)[key] = value + "Z";
+    } else if (typeof value === "object" && value !== null) {
+      appendZToDates(value);
+    }
+  }
+}
+
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data) {
+      appendZToDates(response.data);
+    }
+    return response;
+  },
   async (error: AxiosError<ApiErrorResponse>) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
 

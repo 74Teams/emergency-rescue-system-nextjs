@@ -28,7 +28,7 @@ import {
   useCreateMissionMutation,
   useTeamMembersQuery,
 } from "@/lib/api/features/requests/dispatcher.queries";
-import type { RequestSummary, RescueTeamSummary } from "@/lib/api/types";
+import type { RequestSummary, RescueTeamSummary, MissionSummary } from "@/lib/api/types";
 import { useProfileQuery } from "@/lib/api/use-profile";
 import {
   Loader2,
@@ -46,6 +46,7 @@ import { UserProfileDialog } from "./UserProfileDialog";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { dictTeamStatus } from "@/constants/dictionary";
 
 const DispatcherMapView = dynamic(
   () => import("@/components/dashboards/dispatcher/DispatcherMapView"),
@@ -67,6 +68,7 @@ interface Props {
   onStatusFilterChange: (status: string) => void;
   selectedRequest: RequestSummary | null;
   onSelectRequest: (req: RequestSummary | null) => void;
+  missions: MissionSummary[];
 }
 
 const statusFilters = [
@@ -102,6 +104,7 @@ export function RequestsTable({
   onStatusFilterChange,
   selectedRequest,
   onSelectRequest,
+  missions,
 }: Props) {
   const router = useRouter();
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -326,13 +329,21 @@ export function RequestsTable({
                       Không có đội cứu hộ nào
                     </SelectItem>
                   ) : (
-                    teams.map((t) => (
+                    teams.map((t) => {
+                      const hasActiveMission = missions.some(m => 
+                        m.rescueTeamId === t.id && 
+                        ["ASSIGNED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS"].includes(m.status)
+                      );
+                      const isWorking = hasActiveMission || t.status === "ON_MISSION";
+                      const isAvailable = t.status === "AVAILABLE" && !isWorking;
+                      
+                      return (
                       <SelectItem
                         key={t.id}
                         value={t.id}
-                        disabled={t.status !== "AVAILABLE"}
+                        disabled={!isAvailable}
                         className={
-                          t.status !== "AVAILABLE" ? "opacity-50" : ""
+                          !isAvailable ? "opacity-50" : ""
                         }
                       >
                         <div className="flex items-center justify-between w-[320px]">
@@ -341,16 +352,16 @@ export function RequestsTable({
                             variant="secondary"
                             className={cn(
                               "text-[10px] uppercase font-bold",
-                              t.status === "AVAILABLE"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-slate-100 text-slate-500",
+                              isAvailable
+                                ? "bg-emerald-100 text-emerald-700"
+                                : isWorking ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500",
                             )}
                           >
-                            {t.status}
+                            {isWorking ? dictTeamStatus["ON_MISSION"] : (dictTeamStatus[t.status] || t.status)}
                           </Badge>
                         </div>
                       </SelectItem>
-                    ))
+                    )})
                   )}
                 </SelectContent>
               </Select>

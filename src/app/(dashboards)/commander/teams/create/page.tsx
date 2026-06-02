@@ -58,7 +58,7 @@ export default function CreateTeamPage() {
   // === FORM STATES ===
   const [teamName, setTeamName] = useState("");
   const [description, setDescription] = useState("");
-  const [baseLocationId] = useState("ABB2B119-A482-4515-AAB8-353133D41010");
+  const [baseLocationId] = useState("FB3BE536-D174-4D0C-A2D2-0008D7B42DA6");
 
   const [selectedLeader, setSelectedLeader] = useState<ProfileResponse | null>(
     null,
@@ -74,7 +74,8 @@ export default function CreateTeamPage() {
       (u) =>
         u.isActive &&
         u.roles?.includes("Rescuer") &&
-        !u.roles?.includes("RescuerLeader"),
+        !u.roles?.includes("RescuerLeader") &&
+        !u.rescueTeamId, // Lọc những người chưa có team
     );
   }, [allUsers]);
 
@@ -223,7 +224,7 @@ export default function CreateTeamPage() {
           {/* Section 2: Chọn Đội Trưởng */}
           <section className="space-y-6">
             <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-3">
-              <Crown className="text-amber-500" /> Sĩ quan Chỉ huy{" "}
+              <Crown className="text-amber-500" /> Đội trưởng Đội Cứu Hộ {" "}
               <span className="text-rose-500">*</span>
             </h3>
             <div className="space-y-2">
@@ -254,7 +255,7 @@ export default function CreateTeamPage() {
                       <div className="flex items-center gap-2 text-slate-400">
                         <Search size={18} />{" "}
                         <span className="font-medium">
-                          Tìm & Lựa chọn Sĩ quan chỉ huy...
+                          Tìm & Lựa chọn Đội trưởng..
                         </span>
                       </div>
                     )}
@@ -267,47 +268,61 @@ export default function CreateTeamPage() {
                 >
                   <Command>
                     <CommandInput
-                      placeholder="Gõ tên Sĩ quan..."
+                      placeholder="Gõ tên hoặc email để tìm..."
                       className="h-12"
                     />
                     <CommandList className="max-h-[250px] scroll-smooth">
                       <CommandEmpty className="py-6 text-center text-slate-500 font-medium">
-                        Không có Sĩ quan nào khả dụng.
+                        Không có người nào khả dụng.
                       </CommandEmpty>
                       <CommandGroup>
-                        {eligibleLeaders?.map((user) => (
-                          <CommandItem
-                            key={user.id}
-                            value={`${user.fullName} ${user.email}`}
-                            onSelect={() => {
-                              setSelectedLeader(user);
-                              setOpenLeaderCombo(false);
-                            }}
-                            className="cursor-pointer py-3 px-4 aria-selected:bg-blue-50 group transition-all"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-3 h-4 w-4 text-blue-600 transition-all",
-                                selectedLeader?.id === user.id
-                                  ? "opacity-100"
-                                  : "opacity-0",
-                              )}
-                            />
-                            <Avatar className="w-8 h-8 border border-slate-200 mr-3">
-                              <AvatarFallback className="bg-slate-100 text-slate-600 text-xs font-bold">
-                                {getAvatarText(user.fullName)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col flex-1">
-                              <span className="font-bold text-slate-800">
-                                {user.fullName}
-                              </span>
-                              <span className="text-xs text-slate-500">
-                                {user.email}
-                              </span>
-                            </div>
-                          </CommandItem>
-                        ))}
+                        {eligibleLeaders?.map((user) => {
+                          const roleStyle =
+                            ROLE_BADGES[user.roles?.[0] || "Citizen"] ||
+                            ROLE_BADGES["Citizen"];
+                          return (
+                            <CommandItem
+                              key={user.id}
+                              value={`${user.fullName} ${user.email}`}
+                              onSelect={() => {
+                                setSelectedLeader(user);
+                                setOpenLeaderCombo(false);
+                              }}
+                              className="cursor-pointer py-3 px-4 aria-selected:bg-blue-50 group transition-all"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-3 h-4 w-4 text-blue-600 transition-all",
+                                  selectedLeader?.id === user.id
+                                    ? "opacity-100"
+                                    : "opacity-0",
+                                )}
+                              />
+                              <Avatar className="w-8 h-8 border border-slate-200 mr-3">
+                                <AvatarFallback className="bg-slate-100 text-slate-600 text-xs font-bold">
+                                  {getAvatarText(user.fullName)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col flex-1">
+                                <span className="font-bold text-slate-800">
+                                  {user.fullName}
+                                </span>
+                                <span className="text-xs text-slate-500">
+                                  {user.email}
+                                </span>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[9px] uppercase tracking-widest ml-auto border-none",
+                                  roleStyle.color,
+                                )}
+                              >
+                                {roleStyle.text}
+                              </Badge>
+                            </CommandItem>
+                          );
+                        })}
                       </CommandGroup>
                     </CommandList>
                   </Command>
@@ -315,7 +330,7 @@ export default function CreateTeamPage() {
               </Popover>
               <p className="text-[11px] text-slate-500 font-medium mt-2">
                 * Nhân sự được chọn sẽ tự động nâng cấp quyền hạn lên{" "}
-                <strong className="text-blue-600">Commander</strong>.
+                <strong className="text-blue-600">Rescuer Leader</strong>.
               </p>
             </div>
           </section>

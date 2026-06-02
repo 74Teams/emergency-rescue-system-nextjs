@@ -108,7 +108,7 @@ import {
     SidebarTrigger,
     SidebarMenuItem,
 } from '@/components/ui/sidebar'
-
+import { NotificationBell, NotificationItem } from '@/components/shared/NotificationBell'
 
 import {
     usePendingApprovals,
@@ -178,6 +178,50 @@ export default function CommandCenter() {
         status: 'PENDING',
     })
     const recentRequests = requestsData?.items || []
+
+    const { data: statsRequestsData } = useRequests({
+        pageNumber: 1,
+        pageSize: 100,
+    })
+    const statsRequests = statsRequestsData?.items || []
+
+    const chartData = useMemo(() => {
+        const daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+        if (statsRequests.length === 0) {
+            return [
+                { day: 'T2', requests: 12, resolved: 10 },
+                { day: 'T3', requests: 19, resolved: 15 },
+                { day: 'T4', requests: 15, resolved: 14 },
+                { day: 'T5', requests: 22, resolved: 20 },
+                { day: 'T6', requests: 28, resolved: 25 },
+                { day: 'T7', requests: 35, resolved: 30 },
+                { day: 'CN', requests: 40, resolved: 35 },
+            ]
+        }
+
+        const result = []
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date()
+            date.setDate(date.getDate() - i)
+            const dateStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
+            
+            const dayName = daysOfWeek[date.getDay()]
+            const dayRequests = statsRequests.filter(r => {
+                if (!r.createdAt) return false
+                return r.createdAt.startsWith(dateStr)
+            })
+            
+            const requestsCount = dayRequests.length
+            const resolvedCount = dayRequests.filter(r => r.status === 'COMPLETED').length
+            
+            result.push({
+                day: dayName,
+                requests: requestsCount,
+                resolved: resolvedCount,
+            })
+        }
+        return result
+    }, [statsRequests])
 
     const logout = useLogout()
     const { data: profile } = useProfileQuery()
@@ -321,6 +365,17 @@ export default function CommandCenter() {
             ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
             : parts[0][0].toUpperCase()
     }
+
+    const commanderNotifications: NotificationItem[] = useMemo(() => {
+        if (!pendingUsers) return []
+        return pendingUsers.map(user => ({
+            id: `user_${user.id}`,
+            title: <p className="text-sm font-bold text-amber-600">Yêu cầu đăng ký từ {user.fullName || 'Người dùng mới'}</p>,
+            description: <p className="text-xs text-slate-500">Chờ phê duyệt cấp quyền {user.roles?.[0] || 'Tài khoản'}.</p>,
+            timestamp: user.createdAt || new Date().toISOString(), // Fallback if no createdAt
+            onClick: () => setActiveTab('approval')
+        }))
+    }, [pendingUsers])
 
     const filteredAccounts = useMemo(() => {
         return allUsers?.filter(user => {
@@ -545,14 +600,7 @@ export default function CommandCenter() {
                             </h2>
                         </div>
                         <div className="flex items-center gap-4">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="rounded-full relative text-slate-500 hover:text-blue-600"
-                            >
-                                <Bell size={20} strokeWidth={2.5} />
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-                            </Button>
+                            <NotificationBell items={commanderNotifications} />
 
                             <div className="h-8 w-px bg-slate-200 mx-1"></div>
 
@@ -705,43 +753,7 @@ export default function CommandCenter() {
                                                 >
                                                     <BarChart
                                                         accessibilityLayer
-                                                        data={[
-                                                            {
-                                                                day: 'T2',
-                                                                requests: 12,
-                                                                resolved: 10,
-                                                            },
-                                                            {
-                                                                day: 'T3',
-                                                                requests: 19,
-                                                                resolved: 15,
-                                                            },
-                                                            {
-                                                                day: 'T4',
-                                                                requests: 15,
-                                                                resolved: 14,
-                                                            },
-                                                            {
-                                                                day: 'T5',
-                                                                requests: 22,
-                                                                resolved: 20,
-                                                            },
-                                                            {
-                                                                day: 'T6',
-                                                                requests: 28,
-                                                                resolved: 25,
-                                                            },
-                                                            {
-                                                                day: 'T7',
-                                                                requests: 35,
-                                                                resolved: 30,
-                                                            },
-                                                            {
-                                                                day: 'CN',
-                                                                requests: 40,
-                                                                resolved: 35,
-                                                            },
-                                                        ]}
+                                                        data={chartData}
                                                     >
                                                         <CartesianGrid
                                                             vertical={false}
@@ -962,6 +974,7 @@ export default function CommandCenter() {
                                                                                 size="sm"
                                                                                 variant="default"
                                                                                 className="font-bold shadow-md shadow-blue-500/20"
+                                                                                onClick={() => router.push(`/dispatcher?requestId=${req.id}`)}
                                                                             >
                                                                                 Điều
                                                                                 động

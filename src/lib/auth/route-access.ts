@@ -10,6 +10,7 @@ export type StaffRole = (typeof STAFF_ROLES)[number]
 
 const COMMANDER_ROLES: StaffRole[] = ['Commander']
 const DISPATCHER_ROLES: StaffRole[] = ['Dispatcher', 'Commander']
+const RESCUER_LEADER_ROLES: StaffRole[] = ['RescuerLeader']
 const RESCUER_ROLES: StaffRole[] = ['Rescuer', 'RescuerLeader']
 
 /** Paths anyone can open without logging in */
@@ -32,6 +33,7 @@ export function isAuthRequiredPath(pathname: string): boolean {
 export function getProtectedRoles(pathname: string): StaffRole[] | null {
     if (pathname.startsWith('/commander')) return COMMANDER_ROLES
     if (pathname.startsWith('/dispatcher')) return DISPATCHER_ROLES
+    if (pathname.startsWith('/rescuer-leader')) return RESCUER_LEADER_ROLES
     if (pathname.startsWith('/rescuer')) return RESCUER_ROLES
     return null
 }
@@ -80,6 +82,7 @@ export function resolvePostLoginPath(
     // Ưu tiên check quyền từ cao xuống thấp
     if (hasAnyRole(userRoles, COMMANDER_ROLES)) return '/commander'
     if (hasAnyRole(userRoles, DISPATCHER_ROLES)) return '/dispatcher'
+    if (hasAnyRole(userRoles, RESCUER_LEADER_ROLES)) return '/rescuer-leader'
     if (hasAnyRole(userRoles, RESCUER_ROLES)) return '/rescuer'
 
     return '/'
