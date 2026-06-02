@@ -20,6 +20,8 @@ export interface MissionSummary {
     dispatcher?: {
         id: string
         fullName?: string
+        name?: string
+        email?: string
     }
     rescueTeam?: {
         id: string

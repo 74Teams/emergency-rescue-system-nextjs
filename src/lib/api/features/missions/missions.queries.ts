@@ -68,3 +68,77 @@ export function useUpdateMissionStatus() {
         },
     })
 }
+
+export function useMissionHistory(missionId: string) {
+    return useQuery({
+        queryKey: missionKeys.history(missionId),
+        queryFn: async () => {
+            const res = await missionsApi.history(missionId)
+            return res.data
+        },
+        enabled: !!missionId,
+    })
+}
+
+export function useAddMissionHistory() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({
+            missionId,
+            payload,
+        }: {
+            missionId: string
+            payload: { changedById?: string; note: string }
+        }) => missionsApi.addHistory(missionId, payload),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: missionKeys.history(variables.missionId),
+            })
+        },
+    })
+}
+
+export function useFinishMission() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({
+            missionId,
+            payload,
+        }: {
+            missionId: string
+            payload: { changedById: string; note?: string }
+        }) => missionsApi.finish(missionId, payload),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: missionKeys.lists() })
+            queryClient.invalidateQueries({
+                queryKey: missionKeys.detail(variables.missionId),
+            })
+            queryClient.invalidateQueries({
+                queryKey: missionKeys.history(variables.missionId),
+            })
+        },
+    })
+}
+
+export function useAbortMission() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({
+            missionId,
+            payload,
+        }: {
+            missionId: string
+            payload: { changedById: string; note?: string }
+        }) => missionsApi.abort(missionId, payload),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: missionKeys.lists() })
+            queryClient.invalidateQueries({
+                queryKey: missionKeys.detail(variables.missionId),
+            })
+            queryClient.invalidateQueries({
+                queryKey: missionKeys.history(variables.missionId),
+            })
+        },
+    })
+}
+

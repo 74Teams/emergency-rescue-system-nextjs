@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -38,6 +39,7 @@ interface Props {
 }
 
 export function MissionsPanel({ missions, teams, requests }: Props) {
+  const router = useRouter();
   type SortKey = "status" | "time" | "team";
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: "asc" | "desc" } | null>(null);
   const [selectedMission, setSelectedMission] = useState<MissionSummary | null>(null);
@@ -308,7 +310,7 @@ export function MissionsPanel({ missions, teams, requests }: Props) {
                         variant="ghost"
                         size="sm"
                         className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={() => setSelectedMission(m)}
+                        onClick={() => router.push(`/dispatcher/missions/${m.id}`)}
                       >
                         <Eye className="w-4 h-4 mr-1.5" />
                         Chi tiết
