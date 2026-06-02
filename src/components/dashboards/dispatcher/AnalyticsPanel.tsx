@@ -92,7 +92,7 @@ export function AnalyticsPanel({ requests, missions, teams }: Props) {
   }, [requests, missions, teams]);
 
   return (
-    <ScrollArea className="h-[calc(100vh-300px)]">
+    <ScrollArea className="h-[calc(100vh-440px)]">
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
 
         {/* ===== CARD 1: BY EMERGENCY TYPE (horizontal bar) ===== */}

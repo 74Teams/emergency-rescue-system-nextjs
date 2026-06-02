@@ -26,6 +26,7 @@ import { MissionsPanel } from '@/components/dashboards/dispatcher/MissionsPanel'
 import { TeamsPanel } from '@/components/dashboards/dispatcher/TeamsPanel'
 import { AnalyticsPanel } from '@/components/dashboards/dispatcher/AnalyticsPanel'
 import type { RequestSummary } from '@/lib/api/types'
+import { cn } from '@/lib/utils'
 
 const VIEW_TITLES: Record<DispatcherView, string> = {
     requests: 'Yêu cầu cứu trợ',
@@ -227,15 +228,19 @@ export default function DispatcherDashboard() {
 
                 {/* SCROLLABLE CONTENT AREA */}
                 <div className="flex-1 overflow-hidden flex flex-col p-4 md:p-6 bg-slate-50/80">
-                    {/* STATS OVERVIEW */}
-                    <DispatcherOverview
-                        requests={allRequests}
-                        teams={teams}
-                        missions={missions}
-                    />
+                    {/* STATS OVERVIEW (Only shown in Analytics view) */}
+                    {activeView === 'analytics' && (
+                        <div className="mb-4">
+                            <DispatcherOverview
+                                requests={allRequests}
+                                teams={teams}
+                                missions={missions}
+                            />
+                        </div>
+                    )}
 
                     {/* ACTIVE VIEW CONTENT */}
-                    <div className="mt-4 flex-1 min-h-0">
+                    <div className={cn("flex-1 min-h-0", activeView === 'analytics' ? "mt-0" : "mt-0")}>
                         {activeView === 'requests' && (
                             <RequestsTable
                                 requests={filteredRequests}
