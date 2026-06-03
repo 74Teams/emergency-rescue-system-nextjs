@@ -7,6 +7,8 @@ export interface AuthUserSummary {
   phoneNumber?: string;
   avatarUrl?: string;
   roles: ApiRole[];
+  isActive: boolean;
+  isPendingApproval: boolean;
 }
 
 export interface LoginRequest {
@@ -45,6 +47,8 @@ export interface ProfileResponse {
   avatar?: string;
   address?: Address;
   roles: ApiRole[];
+  isActive?: boolean;
+  isPendingApproval?: boolean;
 }
 
 export interface UpdateProfileRequest {

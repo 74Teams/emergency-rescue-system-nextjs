@@ -11,6 +11,7 @@ export const apiRoutes = {
         resetPassword: '/auth/reset-password',
         contact: '/auth/contact',
         refresh: '/auth/refresh',
+        selectRole: '/auth/select-role',
     },
     users: '/users',
     commander: 'commander',
@@ -20,6 +21,7 @@ export const apiRoutes = {
     missions: '/missions',
     reports: '/reports',
     roles: '/roles',
+    joinRequests: '/rescueteam/join-requests',
 } as const
 
 export const apiRouteBuilders = {
@@ -82,5 +84,14 @@ export const apiRouteBuilders = {
             toggleStatus: (userId: string) =>
                 `${apiRoutes.commander}/users/${userId}/status`,
         },
+    },
+    joinRequests: {
+        myStatus: `${apiRoutes.joinRequests}/my-status`,
+        pending: (teamId?: string) =>
+            teamId ? `${apiRoutes.joinRequests}/pending?teamId=${teamId}` : `${apiRoutes.joinRequests}/pending`,
+        approve: (requestId: string) =>
+            `${apiRoutes.joinRequests}/${requestId}/approve`,
+        reject: (requestId: string) =>
+            `${apiRoutes.joinRequests}/${requestId}/reject`,
     },
 } as const

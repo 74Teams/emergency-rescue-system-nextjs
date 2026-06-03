@@ -19,9 +19,16 @@ export const authApi = {
     });
   },
   register(payload: RegisterRequest) {
-    return apiRequest<ApiResponse<null>>({
+    return apiRequest<ApiResponse<AuthTokenPayload>>({
       method: "POST",
       url: apiRoutes.auth.register,
+      data: payload,
+    });
+  },
+  selectRole(payload: { role: string }) {
+    return apiRequest<ApiResponse<AuthTokenPayload>>({
+      method: "POST",
+      url: apiRoutes.auth.selectRole,
       data: payload,
     });
   },

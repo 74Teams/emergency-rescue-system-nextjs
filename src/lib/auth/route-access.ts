@@ -21,6 +21,7 @@ export function isPublicPath(pathname: string): boolean {
     if (pathname.startsWith('/login')) return true
     if (pathname.startsWith('/register')) return true
     if (pathname.startsWith('/forgot-password')) return true
+    if (pathname.startsWith('/pending-approval')) return true
     return false
 }
 

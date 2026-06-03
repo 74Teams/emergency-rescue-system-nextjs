@@ -27,6 +27,7 @@ import {
     Flag,
     Hammer,
     Info,
+    UserCheck,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -98,7 +99,9 @@ import type { MissionSummary } from '@/lib/api/features/missions/missions.types'
 import type { RescueTeamMemberDTO } from '@/lib/api/features/rescueTeams/rescueTeams.types'
 import { getInitials } from '@/lib/utils/initials'
 import LeaveApprovalsView from '@/components/dashboards/rescuer-leader/LeaveApprovalsView'
+import JoinRequestsView from '@/components/dashboards/rescuer-leader/JoinRequestsView'
 import { useTeamLeaveRequests } from '@/lib/api/features/leaveRequests/leaveRequests.queries'
+import { useTeamJoinRequests } from '@/lib/api/features/joinRequests/joinRequest.queries'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -108,6 +111,7 @@ type TabId =
     | 'pending_missions'
     | 'active_mission'
     | 'team_members'
+    | 'join_requests'
     | 'leave_approvals'
     | 'mission_history'
 
@@ -460,6 +464,12 @@ export default function RescuerLeaderDashboard() {
     const { data: teamMembers, isLoading: isLoadingMembers } =
         useRescueTeamMembers(teamId || null)
     const { data: leaveRequests } = useTeamLeaveRequests(teamId || null)
+    const { data: joinRequests } = useTeamJoinRequests(teamId || undefined)
+
+    const pendingJoinRequestsCount = useMemo(
+        () => (joinRequests ?? []).filter(r => r.status === 0).length,
+        [joinRequests]
+    )
 
     // ── Mutations ─────────────────────────────────────────────────────────────
     const acceptMission = useAcceptMissionMutation()
@@ -664,6 +674,7 @@ export default function RescuerLeaderDashboard() {
                 badge: currentMission ? 1 : undefined,
             },
             { id: 'team_members', label: 'Thành viên đội', icon: Users },
+            { id: 'join_requests', label: 'Duyệt gia nhập', icon: UserCheck, badge: pendingJoinRequestsCount },
             { id: 'leave_approvals', label: 'Duyệt phép', icon: CalendarCheck, badge: pendingLeaveRequestsCount },
             { id: 'mission_history', label: 'Lịch sử nhiệm vụ', icon: History },
         ]
@@ -846,6 +857,7 @@ export default function RescuerLeaderDashboard() {
                                 {activeTab === 'active_mission' &&
                                     'Nhiệm vụ đang thực hiện'}
                                 {activeTab === 'team_members' && 'Quản lý đội'}
+                                {activeTab === 'join_requests' && 'Yêu cầu gia nhập'}
                                 {activeTab === 'leave_approvals' && 'Duyệt phép thành viên'}
                                 {activeTab === 'mission_history' && 'Lịch sử nhiệm vụ'}
                             </h2>
@@ -1043,6 +1055,13 @@ export default function RescuerLeaderDashboard() {
                                             )}
                                         </div>
                                     </div>
+                                </section>
+                            )}
+
+                            {/* ══════════════════ TAB: JOIN REQUESTS ══════════════════ */}
+                            {activeTab === 'join_requests' && (
+                                <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+                                    <JoinRequestsView teamId={teamId} />
                                 </section>
                             )}
 

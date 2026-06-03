@@ -50,6 +50,12 @@ export function useLogin() {
     onSuccess: ({ session, redirectTo }) => {
       // mut-invalidate-queries: Automatically invalidate auth state
       queryClient.invalidateQueries({ queryKey: authKeys.all });
+
+      if (session.user.isPendingApproval) {
+        router.replace("/pending-approval");
+        return;
+      }
+
       const nextPath = resolvePostLoginPath(
         session.user.roles as string[],
         redirectTo

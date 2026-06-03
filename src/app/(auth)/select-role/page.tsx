@@ -2,65 +2,48 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ShieldAlert, User, Radio, Flame, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { authApi } from "@/lib/api/services";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { getStoredUser, setStoredAuthSession } from "@/lib/api/storage";
+import { normalizeAuthTokenPayload } from "@/lib/auth/normalize-auth";
 
 function SelectRoleContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const registeredRole = searchParams.get("role") || "";
-  const registeredEmail = searchParams.get("email") || "";
-
-  const [pendingData, setPendingData] = useState<any>(null);
-  const [registeringRoleId, setRegisteringRoleId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [selectingRoleId, setSelectingRoleId] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const dataStr = sessionStorage.getItem("pendingRegister");
-      if (dataStr) {
-        setPendingData(JSON.parse(dataStr));
-      }
-    } catch (e) {
-      console.error("Error reading pending registration data:", e);
-    }
+    setCurrentUser(getStoredUser());
   }, []);
 
   const handleSelectRole = async (roleId: string) => {
-    if (!pendingData) return;
-
-    setRegisteringRoleId(roleId);
+    setSelectingRoleId(roleId);
     try {
-      await authApi.register({
-        email: pendingData.email,
-        password: pendingData.password,
-        fullName: pendingData.fullName,
-        userName: pendingData.userName,
-        phoneNumber: pendingData.phoneNumber,
-        address: "",
-        dateOfBirth: new Date(2000, 0, 1).toISOString(),
-        avatar: "",
-        role: roleId,
-      });
+      const response = await authApi.selectRole({ role: roleId });
+      const session = normalizeAuthTokenPayload(response.data);
+      setStoredAuthSession(session);
 
-      toast.success("Đăng ký tài khoản thành công!");
-      sessionStorage.removeItem("pendingRegister");
+      toast.success("Lựa chọn vai trò thành công!");
 
       setTimeout(() => {
-        router.push(`/login?email=${encodeURIComponent(pendingData.email)}`);
+        if (session.user.isPendingApproval) {
+          router.push("/pending-approval");
+        } else {
+          router.push("/map");
+        }
       }, 1000);
     } catch (error) {
-      toast.error("Đăng ký thất bại", {
+      toast.error("Lựa chọn vai trò thất bại", {
         description: getApiErrorMessage(error),
       });
     } finally {
-      setRegisteringRoleId(null);
+      setSelectingRoleId(null);
     }
   };
 
@@ -94,7 +77,7 @@ function SelectRoleContent() {
         "Cập nhật trạng thái đội cứu hộ và tiến độ nhiệm vụ",
         "Quản lý danh sách công việc cần làm tại hiện trường",
       ],
-      description: "Dành cho thành viên đội cứu hộ, những người trực tiếp di chuyển tới hiện trường để ứng cứu sự cố.",
+      description: "Dành cho thành viên đội cứu hộ, những người trực tiếp di chuyển tới hiện trường để ứng cứu sự cố. (Cần được phê duyệt)",
       dashboardPath: "/rescuer",
     },
     {
@@ -110,7 +93,7 @@ function SelectRoleContent() {
         "Giám sát bản đồ định vị các lực lượng thời gian thực",
         "Phân tích dữ liệu báo cáo thống kê tình huống cứu trợ",
       ],
-      description: "Dành cho nhân viên điều hành tại trung tâm chỉ huy điều phối các lực lượng cứu nạn cứu hộ.",
+      description: "Dành cho nhân viên điều hành tại trung tâm chỉ huy điều phối các lực lượng cứu nạn cứu hộ. (Cần được phê duyệt)",
       dashboardPath: "/dispatcher",
     },
   ];
@@ -167,16 +150,12 @@ function SelectRoleContent() {
               <ShieldAlert className="size-6 animate-pulse" />
             </div>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl text-white">
-              {pendingData ? "Lựa chọn vai trò của bạn" : "Chào mừng bạn gia nhập Rescue System"}
+              Lựa chọn vai trò của bạn
             </h1>
             <p className="mt-2 text-base text-white/50 max-w-xl mx-auto">
-              {pendingData ? (
+              {currentUser ? (
                 <>
-                  Hãy chọn một vai trò phù hợp để hoàn tất đăng ký tài khoản cho <strong className="text-emerald-400 font-semibold">{pendingData.email}</strong>.
-                </>
-              ) : registeredEmail ? (
-                <>
-                  Tài khoản <strong className="text-emerald-400 font-semibold">{registeredEmail}</strong> đã được tạo. Hãy lựa chọn vai trò của bạn để đăng nhập vào trang quản trị tương ứng.
+                  Hãy chọn một vai trò phù hợp để hoàn tất đăng ký tài khoản cho <strong className="text-emerald-400 font-semibold">{currentUser.email}</strong>.
                 </>
               ) : (
                 "Vui lòng lựa chọn vai trò để tiếp tục truy cập vào hệ thống."
@@ -188,14 +167,14 @@ function SelectRoleContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full items-stretch">
             {roles.map((r, index) => {
               const Icon = r.icon;
-              const isRegistered = !pendingData && registeredRole.toLowerCase() === r.id.toLowerCase();
+              const hasRoleSelected = currentUser?.roles?.some((role: string) => role.toLowerCase() === r.id.toLowerCase());
 
               return (
                 <Card
                   key={r.id}
                   className={cn(
                     "relative flex flex-col border bg-white/[0.03] transition-all duration-300 rounded-2xl overflow-hidden animate-[fadeSlideUp_0.5s_ease_both]",
-                    isRegistered
+                    hasRoleSelected
                       ? cn(
                           "bg-white/[0.05] -translate-y-2 border-white/20",
                           r.color === "blue" && "ring-2 ring-blue-500 shadow-[0_0_30px_rgba(37,99,235,0.25)]",
@@ -216,11 +195,11 @@ function SelectRoleContent() {
                     )}
                   />
 
-                  {/* Registered Highlight Badge */}
-                  {isRegistered && (
-                    <div className="absolute top-4 right-4 flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm animate-bounce">
+                  {/* Selected Highlight Badge */}
+                  {hasRoleSelected && (
+                    <div className="absolute top-4 right-4 flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
                       <CheckCircle2 className="size-3" />
-                      Đã chọn
+                      Đang chọn
                     </div>
                   )}
 
@@ -275,53 +254,29 @@ function SelectRoleContent() {
                   </CardContent>
 
                   <CardFooter className="px-6 pb-6 pt-4 mt-auto border-t border-white/[0.04] bg-transparent">
-                    {pendingData ? (
-                      <Button
-                        disabled={registeringRoleId !== null}
-                        onClick={() => handleSelectRole(r.id)}
-                        className={cn(
-                          "w-full h-10 font-bold transition-all duration-200 gap-1.5",
-                          "text-white",
-                          r.color === "blue" && "bg-blue-600 hover:bg-blue-500 shadow-[0_4px_16px_rgba(37,99,235,0.3)]",
-                          r.color === "emerald" && "bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.3)]",
-                          r.color === "amber" && "bg-amber-600 hover:bg-amber-500 shadow-[0_4px_16px_rgba(245,158,11,0.3)]"
-                        )}
-                      >
-                        {registeringRoleId === r.id ? (
-                          <>
-                            <Loader2 className="animate-spin size-4" />
-                            Đang tạo tài khoản…
-                          </>
-                        ) : (
-                          <>
-                            Đăng ký vai trò này
-                            <ArrowRight className="size-4" />
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <Link
-                        href={`/login?email=${encodeURIComponent(registeredEmail)}`}
-                        className="w-full"
-                      >
-                        <Button
-                          className={cn(
-                            "w-full h-10 font-bold transition-all duration-200 gap-1.5",
-                            isRegistered
-                              ? cn(
-                                  "text-white",
-                                  r.color === "blue" && "bg-blue-600 hover:bg-blue-500 shadow-[0_4px_16px_rgba(37,99,235,0.3)]",
-                                  r.color === "emerald" && "bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.3)]",
-                                  r.color === "amber" && "bg-amber-600 hover:bg-amber-500 shadow-[0_4px_16px_rgba(245,158,11,0.3)]"
-                                )
-                              : "bg-white/10 hover:bg-white/15 text-white/80"
-                          )}
-                        >
-                          Đăng nhập vai trò này
+                    <Button
+                      disabled={selectingRoleId !== null}
+                      onClick={() => handleSelectRole(r.id)}
+                      className={cn(
+                        "w-full h-10 font-bold transition-all duration-200 gap-1.5",
+                        "text-white",
+                        r.color === "blue" && "bg-blue-600 hover:bg-blue-500 shadow-[0_4px_16px_rgba(37,99,235,0.3)]",
+                        r.color === "emerald" && "bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_16px_rgba(16,185,129,0.3)]",
+                        r.color === "amber" && "bg-amber-600 hover:bg-amber-500 shadow-[0_4px_16px_rgba(245,158,11,0.3)]"
+                      )}
+                    >
+                      {selectingRoleId === r.id ? (
+                        <>
+                          <Loader2 className="animate-spin size-4" />
+                          Đang thiết lập…
+                        </>
+                      ) : (
+                        <>
+                          Lựa chọn vai trò này
                           <ArrowRight className="size-4" />
-                        </Button>
-                      </Link>
-                    )}
+                        </>
+                      )}
+                    </Button>
                   </CardFooter>
                 </Card>
               );

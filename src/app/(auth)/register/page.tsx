@@ -17,6 +17,8 @@ import { AlertCircle, Eye, EyeOff, Info, Loader2, ShieldAlert } from "lucide-rea
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { setStoredAuthSession } from "@/lib/api/storage";
+import { normalizeAuthTokenPayload } from "@/lib/auth/normalize-auth";
 // Select component not needed anymore
 
 export default function RegisterPage() {
@@ -78,17 +80,22 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      const pendingData = {
+      const registerData = {
         email: formData.email.trim(),
         password: formData.password,
         fullName: formData.fullName.trim(),
         userName,
         phoneNumber: phoneDigits,
+        address: "",
+        dateOfBirth: new Date(2000, 0, 1).toISOString(),
+        avatar: "",
       };
 
-      sessionStorage.setItem("pendingRegister", JSON.stringify(pendingData));
+      const response = await authApi.register(registerData);
+      const session = normalizeAuthTokenPayload(response.data);
+      setStoredAuthSession(session);
 
-      toast.success("Thông tin hợp lệ! Đang chuyển tới trang lựa chọn vai trò...");
+      toast.success("Đăng ký tài khoản thành công! Đang chuyển tới trang lựa chọn vai trò...");
       setTimeout(() => {
         window.location.href = "/select-role";
       }, 1000);

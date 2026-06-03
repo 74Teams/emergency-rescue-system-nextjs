@@ -35,6 +35,8 @@ export function normalizeAuthTokenPayload(raw: unknown): AuthTokenPayload {
     avatarUrl:
       pickString(userRaw, "avatarUrl", "avatar", "Avatar") || undefined,
     roles: normalizeApiRoles(userRaw.roles ?? userRaw.Roles) as ApiRole[],
+    isActive: Boolean(userRaw.isActive ?? userRaw.IsActive ?? true),
+    isPendingApproval: Boolean(userRaw.isPendingApproval ?? userRaw.IsPendingApproval ?? false),
   };
 
   return {

@@ -67,6 +67,7 @@ import { useLogout } from '@/lib/api/use-auth'
 import RescuerProfile from '@/components/dashboards/rescuer/RescuerProfile'
 import RescuerCurrentMission from '@/components/dashboards/rescuer/RescuerCurrentMission'
 import LeaveRequestModal from '@/components/dashboards/rescuer/LeaveRequestModal'
+import RescuerOnboarding from '@/components/dashboards/rescuer/RescuerOnboarding'
 import { NotificationBell, NotificationItem } from '@/components/shared/NotificationBell'
 import { useMyLeaveRequests } from '@/lib/api/features/leaveRequests/leaveRequests.queries'
 import { useProfileQuery } from '@/lib/api/features/auth/auth.queries'
@@ -261,6 +262,10 @@ export default function RescuerDashboard() {
                 <Loader2 className="w-10 h-10 animate-spin text-orange-600" />
             </div>
         )
+    }
+
+    if (!teamId && profile?.roles?.includes('Rescuer')) {
+        return <RescuerOnboarding profile={profile} />
     }
 
     return (

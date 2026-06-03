@@ -1,4 +1,5 @@
 export * from './features/auth/auth.queries'
+export * from './features/joinRequests/joinRequest.queries'
 export * from './features/commander/commander.queries'
 export * from './features/contacts/contacts.queries'
 export * from './features/locations/locations.queries'
@@ -64,5 +65,9 @@ export const apiQueryKeys = {
     roles: {
         all: ['roles'] as const,
         detail: (roleId: string) => ['roles', roleId] as const,
+    },
+    joinRequests: {
+        myStatus: ['join-requests', 'my-status'] as const,
+        pending: (teamId?: string) => ['join-requests', 'pending', teamId] as const,
     },
 } as const

@@ -33,6 +33,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Check if user is registered but pending commander approval
+      if (user.isPendingApproval && pathname !== "/pending-approval" && pathname !== "/select-role") {
+        router.replace("/pending-approval");
+        setAllowed(false);
+        return;
+      }
+
       // 3. Role-protected paths → additionally check user roles
       const requiredRoles = getProtectedRoles(pathname);
       if (requiredRoles && !canAccessPath(pathname, user.roles)) {
