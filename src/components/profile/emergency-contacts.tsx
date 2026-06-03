@@ -108,7 +108,7 @@ function ContactCard({
           </div>
           <span className="flex items-center gap-1.5 text-sm text-slate-500">
             <PhoneCallIcon className="size-3.5 text-slate-400" />
-            {contact.phone}
+            {contact.phoneNumber}
           </span>
         </div>
       </div>
@@ -189,7 +189,7 @@ function ContactFormDialog({
   useState(() => {
     if (editContact) {
       setName(editContact.name);
-      setPhone(editContact.phone);
+      setPhone(editContact.phoneNumber);
       setRelationship(editContact.relationship);
     } else {
       setName("");
@@ -202,7 +202,7 @@ function ContactFormDialog({
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen && editContact) {
       setName(editContact.name);
-      setPhone(editContact.phone);
+      setPhone(editContact.phoneNumber);
       setRelationship(editContact.relationship);
     } else if (nextOpen && !editContact) {
       setName("");
@@ -214,7 +214,7 @@ function ContactFormDialog({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSave({ name, phone, relationship });
+    onSave({ name, phoneNumber: phone, relationship });
   }
 
   const isEdit = !!editContact;

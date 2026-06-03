@@ -1,13 +1,15 @@
 export interface ContactSummary {
   id: string;
   name: string;
-  phone: string;
+  phoneNumber: string;
   relationship: string;
+  email?: string | null;
   createdAt?: string;
 }
 
 export interface CreateContactInput {
   name: string;
-  phone: string;
+  phoneNumber: string;
   relationship: string;
+  email?: string;
 }

@@ -6,8 +6,9 @@ import { ContactSummary, CreateContactInput } from "./contacts.types";
 function buildContactPayload(payload: CreateContactInput) {
   return {
     name: payload.name,
-    phone: payload.phone,
+    phoneNumber: payload.phoneNumber,
     relationship: payload.relationship,
+    email: payload.email || "",
   };
 }
 
