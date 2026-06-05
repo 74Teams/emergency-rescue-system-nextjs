@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ShieldAlert, User, Radio, Flame, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { LifeBuoy, User, Radio, Flame, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, useState, useEffect } from "react";
@@ -78,7 +78,7 @@ function SelectRoleContent() {
         "Quản lý danh sách công việc cần làm tại hiện trường",
       ],
       description: "Dành cho thành viên đội cứu hộ, những người trực tiếp di chuyển tới hiện trường để ứng cứu sự cố. (Cần được phê duyệt)",
-      dashboardPath: "/rescuer",
+      dashboardPath: "/dashboard/rescuer",
     },
     {
       id: "Dispatcher",
@@ -94,7 +94,7 @@ function SelectRoleContent() {
         "Phân tích dữ liệu báo cáo thống kê tình huống cứu trợ",
       ],
       description: "Dành cho nhân viên điều hành tại trung tâm chỉ huy điều phối các lực lượng cứu nạn cứu hộ. (Cần được phê duyệt)",
-      dashboardPath: "/dispatcher",
+      dashboardPath: "/dashboard/dispatcher",
     },
   ];
 
@@ -145,9 +145,9 @@ function SelectRoleContent() {
         <div className="relative z-10 w-full max-w-6xl flex flex-col items-center">
           
           {/* Header */}
-          <div className="text-center mb-12 animate-[fadeSlideUp_0.5s_ease_both]">
-            <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-amber-500 text-white shadow-lg shadow-red-500/20 ring-4 ring-red-500/10 mx-auto">
-              <ShieldAlert className="size-6 animate-pulse" />
+          <div className="text-center mb-12 animate-[fadeSlideUp_0.5s_ease_both] group cursor-pointer">
+            <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 ring-4 ring-emerald-500/10 mx-auto">
+              <LifeBuoy className="size-6 transition-transform duration-500 group-hover:rotate-90" />
             </div>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl text-white">
               Lựa chọn vai trò của bạn

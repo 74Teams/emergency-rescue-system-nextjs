@@ -15,6 +15,7 @@ import {
     Heart,
     Info,
     Layers,
+    LifeBuoy,
     Map,
     MapPin,
     Menu,
@@ -107,25 +108,20 @@ export default function LandingPage() {
                     {/* Logo */}
                     <Link
                         href="/"
-                        className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-2.5 hover:opacity-90 transition-opacity group"
                     >
                         <div className="relative flex size-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-200">
-                            <Activity className="size-5 stroke-[2.5]" />
-                            <span className="absolute -right-0.5 -top-0.5 flex size-2.5">
-                                <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex size-2.5 rounded-full bg-red-500 border border-white"></span>
-                            </span>
+                            <LifeBuoy className="size-5 stroke-[2.5] transition-transform duration-500 group-hover:rotate-90" />
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[17px] font-black tracking-tight leading-none text-slate-950">
-                                Điều phối cứu hộ
+                                Rescue
                                 <span className="text-emerald-600">
-                                    {' '}
-                                    cứu nạn
+                                    System
                                 </span>
                             </span>
                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-none mt-1">
-                                Hệ thống điều phối cứu hộ cứu nạn
+                                Điều phối cứu hộ cứu nạn
                             </span>
                         </div>
                     </Link>
@@ -975,7 +971,7 @@ export default function LandingPage() {
                                 name: 'Võ Ngọc Cư',
                                 role: 'Backend Developer & GIS',
                                 avatarInitials: 'NC',
-                                imageUrl: '',
+                                imageUrl: '/nc.jpg',
                                 desc: 'Phát triển hệ thống theo kiến trúc Clean Architecture và tích hợp các thành phần GIS.',
                                 skills: [
                                     '.NET 10',
@@ -1166,12 +1162,12 @@ export default function LandingPage() {
                         className="flex flex-col items-center md:items-start gap-1.5"
                         data-aos="fade-up"
                     >
-                        <div className="flex items-center gap-2">
-                            <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white">
-                                <Activity className="size-4 stroke-[2.5]" />
+                        <div className="flex items-center gap-2 group">
+                            <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
+                                <LifeBuoy className="size-4 stroke-[2.5] transition-transform duration-500 group-hover:rotate-45" />
                             </div>
-                            <span className="text-sm font-black text-white">
-                                RESCUE SYSTEM
+                            <span className="text-sm font-black text-white tracking-wider">
+                                Rescue<span className="text-emerald-500">System</span>
                             </span>
                         </div>
                         <p className="text-slate-500 text-center md:text-left">

@@ -39,6 +39,20 @@ export interface MissionSummary {
             latitude: number
             longitude: number
         }
+        medias?: {
+            id: string
+            mediaUrl: string
+            mediaType: string
+        }[]
+        requestedBy?: {
+            id: string
+            fullName: string
+            email?: string
+            userName?: string
+            phoneNumber?: string
+            address?: string
+            avatar?: string
+        }
     }
 }
 

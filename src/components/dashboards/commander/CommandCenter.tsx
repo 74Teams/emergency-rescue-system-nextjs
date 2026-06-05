@@ -271,7 +271,7 @@ export default function CommandCenter() {
             setIsActionPanelOpen(true)
             setIsChangeStatusOpen(true)
         } else if (action === 'assign_mission') {
-            router.push(`/dispatcher?view=teams&teamId=${teamId}`)
+            router.push(`/dashboard/dispatcher?view=teams&teamId=${teamId}`)
         } else if (action === 'view_details') {
             setIsActionPanelOpen(true)
         }
@@ -974,7 +974,7 @@ export default function CommandCenter() {
                                                                                 size="sm"
                                                                                 variant="default"
                                                                                 className="font-bold shadow-md shadow-blue-500/20"
-                                                                                onClick={() => router.push(`/dispatcher?requestId=${req.id}`)}
+                                                                                onClick={() => router.push(`/dashboard/dispatcher?requestId=${req.id}`)}
                                                                             >
                                                                                 Điều
                                                                                 động
@@ -1570,7 +1570,7 @@ export default function CommandCenter() {
                                             className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 font-bold"
                                             onClick={() => {
                                                 router.push(
-                                                    '/commander/teams/create'
+                                                    '/dashboard/commander/teams/create'
                                                 )
                                             }}
                                         >
@@ -1589,7 +1589,7 @@ export default function CommandCenter() {
                                                 (team: RescueTeamSummary) => {
                                                     const statusStyle =
                                                         TEAM_STATUS_BADGES[
-                                                        team.status
+                                                            team.status
                                                         ] || {
                                                             text: 'Không rõ',
                                                             variant: 'outline',
@@ -1598,124 +1598,89 @@ export default function CommandCenter() {
                                                     return (
                                                         <Card
                                                             key={team.id}
-                                                            className="group flex flex-col rounded-2xl border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 overflow-hidden"
+                                                            className="group flex flex-col rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 overflow-hidden"
                                                         >
-                                                            <div className="relative p-5 pb-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-                                                                <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f00a_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f00a_1px,transparent_1px)] bg-[size:1rem_1rem] opacity-50"></div>
-
+                                                            {/* Card Header Gradient banner */}
+                                                            <div className="relative p-6 pb-7 bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/50 dark:to-slate-900/30 border-b border-slate-100 dark:border-slate-800/80">
                                                                 <div className="relative z-10 flex items-start justify-between gap-4">
-                                                                    <div className="space-y-1.5 flex-1">
-                                                                        <h4 className="text-lg font-black text-white tracking-tight line-clamp-1">
-                                                                            {
-                                                                                team.teamName
-                                                                            }
+                                                                    <div className="space-y-1.5 flex-1 min-w-0">
+                                                                        <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                                            {team.teamName}
                                                                         </h4>
-                                                                        <p className="text-xs text-slate-400 font-medium line-clamp-1 max-w-[90%]">
-                                                                            {team.description ||
-                                                                                'Lực lượng phản ứng nhanh'}
+                                                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-1">
+                                                                            {team.description || 'Lực lượng phản ứng nhanh cứu trợ khẩn cấp'}
                                                                         </p>
                                                                     </div>
                                                                     <Badge
-                                                                        variant={
-                                                                            statusStyle.variant
-                                                                        }
+                                                                        variant="outline"
                                                                         className={cn(
-                                                                            'shrink-0 text-[10px] font-black tracking-wider uppercase shadow-sm border',
-                                                                            statusStyle.color
+                                                                            'shrink-0 text-[10px] font-bold tracking-wider uppercase shadow-none border px-2.5 py-0.5 rounded-full',
+                                                                            team.status === 'AVAILABLE' && 'bg-emerald-50 text-emerald-700 border-emerald-200/50 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30',
+                                                                            team.status === 'ON_MISSION' && 'bg-blue-50 text-blue-700 border-blue-200/50 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30',
+                                                                            team.status === 'UNAVAILABLE' && 'bg-rose-50 text-rose-700 border-rose-200/50 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-900/30',
+                                                                            team.status === 'MAINTENANCE' && 'bg-amber-50 text-amber-700 border-amber-200/50 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30'
                                                                         )}
                                                                     >
-                                                                        {
-                                                                            statusStyle.text
-                                                                        }
+                                                                        {statusStyle.text}
                                                                     </Badge>
                                                                 </div>
                                                             </div>
 
-                                                            <CardContent className="relative flex-1 p-5 pt-0">
-                                                                <div className="flex items-end justify-between -mt-6 mb-5 relative z-20">
-                                                                    <div className="relative">
-                                                                        <Avatar className="w-14 h-14 border-4 border-white shadow-md bg-white">
-                                                                            <AvatarFallback className="bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 font-black text-lg">
-                                                                                {team
-                                                                                    .leader
-                                                                                    ?.fullName
-                                                                                    ? getAvatarText(
-                                                                                        team
-                                                                                            .leader
-                                                                                            .fullName
-                                                                                    )
-                                                                                    : 'LD'}
-                                                                            </AvatarFallback>
-                                                                        </Avatar>
-                                                                        <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-white shadow-sm">
-                                                                            <Crown
-                                                                                size={
-                                                                                    10
-                                                                                }
-                                                                                strokeWidth={
-                                                                                    3
-                                                                                }
-                                                                            />
+                                                            <CardContent className="relative flex-1 p-6">
+                                                                {/* Avatar & Leader segment */}
+                                                                <div className="flex items-center justify-between mb-6">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="relative">
+                                                                            <Avatar className="w-12 h-12 border-2 border-white dark:border-slate-800 shadow-md bg-white">
+                                                                                <AvatarFallback className="bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 font-bold text-sm">
+                                                                                    {team.leader?.fullName ? getAvatarText(team.leader.fullName) : 'LD'}
+                                                                                </AvatarFallback>
+                                                                            </Avatar>
+                                                                            <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white bg-amber-500 text-white shadow-sm">
+                                                                                <Crown size={10} strokeWidth={3} />
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
 
-                                                                    <div className="mb-1 text-right">
-                                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                                                            Sĩ
-                                                                            quan
-                                                                            chỉ
-                                                                            huy
-                                                                        </p>
-                                                                        <p className="text-sm font-bold text-slate-800 line-clamp-1">
-                                                                            {team
-                                                                                .leader
-                                                                                ?.fullName ||
-                                                                                'Chưa bổ nhiệm'}
-                                                                        </p>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                                                                Chỉ huy đội
+                                                                            </span>
+                                                                            <span className="text-sm font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
+                                                                                {team.leader?.fullName || 'Chưa bổ nhiệm'}
+                                                                            </span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 transition-colors group-hover:bg-blue-50/50 group-hover:border-blue-100">
+                                                                {/* Sĩ số biên chế info box */}
+                                                                <div className="rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 p-4 transition-colors group-hover:bg-blue-50/20 group-hover:border-blue-100/50 dark:group-hover:bg-blue-950/10 dark:group-hover:border-blue-900/30">
                                                                     <div className="flex items-center gap-4">
-                                                                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm border border-slate-100 transition-transform group-hover:scale-105 group-hover:text-blue-700">
-                                                                            <Users
-                                                                                size={
-                                                                                    20
-                                                                                }
-                                                                                strokeWidth={
-                                                                                    2.5
-                                                                                }
-                                                                            />
+                                                                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800/60 transition-transform group-hover:scale-105">
+                                                                            <Users size={20} strokeWidth={2.5} />
                                                                         </div>
-                                                                        <div>
-                                                                            <p className="text-2xl font-black text-slate-800 leading-none transition-colors group-hover:text-blue-700">
-                                                                                {team.memberCount ||
-                                                                                    0}
-                                                                            </p>
-                                                                            <p className="text-[10px] font-bold text-slate-500 mt-1.5 uppercase tracking-widest">
-                                                                                Nhân
-                                                                                sự
-                                                                                biên
-                                                                                chế
-                                                                            </p>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-2xl font-black text-slate-800 dark:text-slate-100 leading-none">
+                                                                                {team.memberCount || 0}
+                                                                            </span>
+                                                                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1.5 uppercase tracking-widest">
+                                                                                Nhân sự biên chế
+                                                                            </span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                             </CardContent>
 
-                                                            <CardFooter className="p-5 pt-0 mt-auto">
+                                                            <CardFooter className="p-6 pt-0 mt-auto">
                                                                 <Button
                                                                     variant="outline"
-                                                                    className="w-full bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border-slate-200 font-bold shadow-sm transition-all h-11"
+                                                                    className="w-full bg-white dark:bg-slate-900 hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-700 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900 border-slate-200 dark:border-slate-800 font-bold shadow-sm transition-all h-11 rounded-xl cursor-pointer"
                                                                     onClick={() =>
                                                                         router.push(
-                                                                            `/commander/teams/${team.id}/manage`
+                                                                            `/dashboard/commander/teams/${team.id}/manage`
                                                                         )
                                                                     }
                                                                 >
-                                                                    Quản lý Đội
-                                                                    hình & Nhân
-                                                                    sự
+                                                                    Quản lý Đội hình & Nhân sự
                                                                 </Button>
                                                             </CardFooter>
                                                         </Card>

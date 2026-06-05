@@ -6,23 +6,40 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { getInitials } from '@/lib/utils/initials'
 import { Shield, Mail, Phone, Clock, Target, CheckCircle } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
 import { format } from 'date-fns'
-import { dictTeamStatus } from '@/constants/dictionary'
+import { dictTeamStatus, dictType, dictPriority, dictStatus } from '@/constants/dictionary'
 import { vi } from 'date-fns/locale'
 import { toast } from 'sonner'
 
-const mockPerformanceData = [
-  { name: '1 tháng trước', missions: 5 },
-  { name: '2 tháng trước', missions: 15 },
-  { name: '3 tháng trước', missions: 14 },
-  { name: '4 tháng trước', missions: 22 },
-  { name: '5 tháng trước', missions: 20 },
-  { name: 'Tháng này', missions: 35 },
-]
-
-export default function RescuerProfile({ profile, teamDetails, historyMissions, isUserActive = true }: any) {
+export default function RescuerProfile({ profile, teamDetails, missions, isUserActive = true }: any) {
     const isTeamActive = teamDetails?.status === 'ON_MISSION'
+
+    const completedMissionsCount = React.useMemo(() => {
+        return missions?.filter((m: any) => m.status === 'COMPLETED').length ?? 0
+    }, [missions])
+
+    const totalHours = React.useMemo(() => {
+        let hours = 0
+        missions?.forEach((m: any) => {
+            if (m.status === 'COMPLETED' && m.startTime && m.endTime) {
+                const diff = new Date(m.endTime).getTime() - new Date(m.startTime).getTime()
+                if (diff > 0) {
+                    hours += diff / (1000 * 60 * 60)
+                }
+            }
+        })
+        return Math.round(hours * 10) / 10
+    }, [missions])
+
+    const recentMissionsList = React.useMemo(() => {
+        if (!missions) return []
+        // Sort missions by startTime or createdAt descending
+        return [...missions].sort((a: any, b: any) => {
+            const timeA = new Date(a.startTime || a.createdAt || 0).getTime()
+            const timeB = new Date(b.startTime || b.createdAt || 0).getTime()
+            return timeB - timeA
+        }).slice(0, 3)
+    }, [missions])
     
     return (
         <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -80,14 +97,14 @@ export default function RescuerProfile({ profile, teamDetails, historyMissions, 
 
                         <div className="mt-6 flex gap-6 pt-6 border-t border-slate-50">
                             <div>
-                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Kinh nghiệm</h4>
-                                <p className="text-xl font-black text-slate-800">3 Năm</p>
-                                <p className="text-xs text-slate-500 font-medium">Kinh nghiệm</p>
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Nhiệm vụ</h4>
+                                <p className="text-xl font-black text-slate-800">{completedMissionsCount}</p>
+                                <p className="text-xs text-slate-500 font-medium">Hoàn thành</p>
                             </div>
                             <div>
-                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 invisible">Nhiệm vụ</h4>
-                                <p className="text-xl font-black text-slate-800">{historyMissions?.length || 50}</p>
-                                <p className="text-xs text-slate-500 font-medium">Nhiệm vụ</p>
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Hoạt động</h4>
+                                <p className="text-xl font-black text-slate-800">{totalHours}h</p>
+                                <p className="text-xs text-slate-500 font-medium">Tổng số giờ</p>
                             </div>
                         </div>
                     </CardContent>
@@ -167,55 +184,63 @@ export default function RescuerProfile({ profile, teamDetails, historyMissions, 
                 </Card>
             </div>
 
-            {/* 3. HIỆU SUẤT GẦN ĐÂY */}
+            {/* 3. NHIỆM VỤ GẦN ĐÂY CỦA ĐỘI */}
             <Card className="border-slate-100 shadow-sm rounded-2xl overflow-hidden mt-6">
                 <CardHeader className="bg-white border-b border-slate-50 pb-4">
-                    <CardTitle className="text-base font-bold text-slate-800">Hiệu suất gần đây</CardTitle>
+                    <CardTitle className="text-base font-bold text-slate-800">Nhiệm vụ gần đây</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 bg-white">
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        <div className="lg:col-span-3 h-[250px]">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Số lượng nhiệm vụ</h4>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={mockPerformanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorMissions" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                                    <Tooltip 
-                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                        labelStyle={{ color: '#64748b', fontSize: '12px', fontWeight: 'bold' }}
-                                    />
-                                    <Area type="monotone" dataKey="missions" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorMissions)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="flex flex-col gap-4 justify-center">
-                            <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-                                <div className="flex justify-between items-center mb-2">
-                                    <p className="text-xs font-bold text-slate-500">Nhiệm vụ hoàn thành</p>
-                                    <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
-                                        <CheckCircle size={14} />
+                    {recentMissionsList.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500 font-medium">Chưa có nhiệm vụ nào gần đây.</div>
+                    ) : (
+                        <div className="space-y-4">
+                            {recentMissionsList.map((mission: any) => {
+                                const isCompleted = mission.status === 'COMPLETED';
+                                const isAborted = mission.status === 'ABORTED';
+                                return (
+                                    <div key={mission.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50/50 transition-colors">
+                                        <div className="flex items-start gap-4">
+                                            <div className={`p-2.5 rounded-xl ${
+                                                isCompleted ? 'bg-emerald-50 text-emerald-600' :
+                                                isAborted ? 'bg-rose-50 text-rose-600' : 'bg-orange-50 text-orange-600 animate-pulse'
+                                            }`}>
+                                                <Target size={20} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-800 text-sm leading-snug">
+                                                    {mission.request?.location?.address || 'Không rõ địa chỉ hiện trường'}
+                                                </h4>
+                                                <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                                    <Badge variant="secondary" className="bg-slate-50 text-slate-600 text-[10px] font-bold">
+                                                        {dictType[mission.request?.emergencyType || ''] || 'Khác'}
+                                                    </Badge>
+                                                    <Badge variant="outline" className={`text-[10px] font-bold ${
+                                                        mission.request?.priority === 'CRITICAL' || mission.request?.priority === 'HIGH'
+                                                            ? 'text-rose-500 border-rose-100 bg-rose-50/30'
+                                                            : 'text-amber-500 border-amber-100 bg-amber-50/30'
+                                                    }`}>
+                                                        Mức độ: {dictPriority[mission.request?.priority || ''] || mission.request?.priority || 'Thấp'}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 sm:mt-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2">
+                                            <Badge className={
+                                                isCompleted ? "bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase" :
+                                                isAborted ? "bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase" :
+                                                "bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black uppercase"
+                                            }>
+                                                {dictStatus[mission.status] || mission.status}
+                                            </Badge>
+                                            <p className="text-[11px] text-slate-400 font-bold">
+                                                {mission.startTime ? format(new Date(mission.startTime), 'HH:mm dd/MM/yyyy', { locale: vi }) : 'Chưa bắt đầu'}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                <p className="text-4xl font-black text-slate-800">45</p>
-                            </div>
-                            <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-                                <div className="flex justify-between items-center mb-2">
-                                    <p className="text-xs font-bold text-slate-500">Thời gian hoạt động</p>
-                                    <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center">
-                                        <Clock size={14} />
-                                    </div>
-                                </div>
-                                <p className="text-4xl font-black text-slate-800">120<span className="text-lg text-slate-400 font-bold ml-1">h</span></p>
-                            </div>
+                                );
+                            })}
                         </div>
-                    </div>
+                    )}
                 </CardContent>
             </Card>
 

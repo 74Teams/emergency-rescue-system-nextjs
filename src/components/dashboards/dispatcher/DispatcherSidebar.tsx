@@ -17,13 +17,12 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import {
-  Activity,
   BarChart3,
   ClipboardList,
+  LifeBuoy,
   LogOut,
   Rocket,
   Settings,
-  ShieldAlert,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -83,16 +82,15 @@ export function DispatcherSidebar({
       <Sidebar collapsible="icon" className="border-r-0">
         {/* ── HEADER ── */}
         <SidebarHeader className="px-4 py-5 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
-          <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-            <div className="relative flex shrink-0 items-center justify-center size-10 rounded-xl bg-gradient-to-br from-red-500 to-red-700 text-white shadow-lg shadow-red-500/25">
-              <ShieldAlert className="size-5 stroke-[2.5]" />
+          <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center group cursor-pointer hover:opacity-95 transition-opacity">
+            <div className="relative flex shrink-0 items-center justify-center size-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25">
+              <LifeBuoy className="size-5 stroke-[2.5] transition-transform duration-500 group-hover:rotate-90" />
             </div>
             <div className="flex flex-col justify-center group-data-[collapsible=icon]:hidden">
               <span className="text-base font-black tracking-tight leading-none text-white">
-                RESCUE<span className="text-blue-400">CORE</span>
+                Rescue<span className="text-emerald-400">System</span>
               </span>
-              <span className="text-[9px] font-semibold text-emerald-400 uppercase tracking-[0.2em] leading-none mt-1.5 flex items-center gap-1">
-                <Activity className="size-2.5" />
+              <span className="text-[9px] font-semibold text-emerald-400/80 uppercase tracking-[0.2em] leading-none mt-1.5">
                 Trung tâm điều phối
               </span>
             </div>

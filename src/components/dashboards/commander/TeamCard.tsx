@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import type { RescueTeamSummary, TeamStatus } from "@/lib/api/types";
 import {
   MapPin,
   Users,
+  User,
   Calendar,
   MoreVertical,
   CheckCircle2,
@@ -64,26 +64,34 @@ interface TeamCardProps {
 // Mapping status sang config (icon, màu, label)
 const STATUS_CONFIG: Record<
   TeamStatus,
-  { icon: React.ElementType; color: string; label: string }
+  { icon: React.ElementType; badgeClass: string; borderClass: string; indicatorClass: string; label: string }
 > = {
   AVAILABLE: {
     icon: CheckCircle2,
-    color: "bg-green-500",
+    badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30",
+    borderClass: "border-l-emerald-500",
+    indicatorClass: "bg-emerald-500",
     label: dictTeamStatus.AVAILABLE,
   },
   ON_MISSION: {
     icon: Clock,
-    color: "bg-blue-500",
+    badgeClass: "bg-blue-50 text-blue-700 border-blue-200/60 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30",
+    borderClass: "border-l-blue-500",
+    indicatorClass: "bg-blue-500",
     label: dictTeamStatus.ON_MISSION,
   },
   UNAVAILABLE: {
     icon: XCircle,
-    color: "bg-red-500",
+    badgeClass: "bg-rose-50 text-rose-700 border-rose-200/60 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-900/30",
+    borderClass: "border-l-rose-500",
+    indicatorClass: "bg-rose-500",
     label: dictTeamStatus.UNAVAILABLE,
   },
   MAINTENANCE: {
     icon: Wrench,
-    color: "bg-orange-500",
+    badgeClass: "bg-amber-50 text-amber-700 border-amber-200/60 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30",
+    borderClass: "border-l-amber-500",
+    indicatorClass: "bg-amber-500",
     label: dictTeamStatus.MAINTENANCE,
   },
 };
@@ -202,42 +210,41 @@ export default function TeamCard({
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-700",
-        isSelected &&
-        "ring-2 ring-blue-500 shadow-md border-blue-300 dark:border-blue-700",
+        "cursor-pointer transition-all duration-300 border-l-4 rounded-xl bg-white dark:bg-slate-900 overflow-hidden",
+        statusConfig.borderClass,
+        isSelected
+          ? "ring-2 ring-blue-500 border-blue-400 dark:border-blue-600 shadow-md scale-[1.01]"
+          : "border-slate-200 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 hover:scale-[1.01]"
       )}
       onClick={handleCardClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <CardHeader className="pb-3">
+      <CardHeader className="px-5 pt-5 pb-3">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3 flex-1">
+          <div className="flex items-center gap-3.5 flex-1 min-w-0">
             {/* Team Avatar */}
-            <Avatar className="h-10 w-10">
-              {/*TODO: Add team avatar */}
-              {/* <AvatarImage src={team.leader?.avatar} /> */}
-              <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+            <Avatar className="h-10 w-10 border border-slate-100 dark:border-slate-800 shadow-sm shrink-0">
+              <AvatarFallback className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs">
                 {getInitials(team.teamName)}
               </AvatarFallback>
             </Avatar>
 
             <div className="flex-1 min-w-0">
               {/* Team Name */}
-              <CardTitle className="text-base font-semibold truncate">
+              <CardTitle className="text-base font-black text-slate-900 dark:text-slate-100 tracking-tight leading-snug truncate">
                 {team.teamName}
               </CardTitle>
 
               {/* Status Badge */}
               <Badge
-                variant="secondary"
+                variant="outline"
                 className={cn(
-                  "mt-1 gap-1 text-xs",
-                  statusConfig.color,
-                  "text-white",
+                  "mt-1.5 gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full border tracking-wide uppercase",
+                  statusConfig.badgeClass,
                 )}
               >
-                <StatusIcon className="h-3 w-3" />
+                <StatusIcon className="h-3 w-3 shrink-0" />
                 {statusConfig.label}
               </Badge>
             </div>
@@ -248,7 +255,7 @@ export default function TeamCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 shrink-0"
               onClick={(e) => handleActionClick("menu", e)}
             >
               <MoreVertical className="h-4 w-4" />
@@ -257,37 +264,43 @@ export default function TeamCard({
         </div>
       </CardHeader>
 
-      <Separator className="my-2" />
-
-      <CardContent className="pt-3">
-        <div className="space-y-2">
+      <CardContent className="px-5 pb-4 pt-1">
+        <div className="grid grid-cols-1 gap-2.5">
           {/* Leader Info */}
           {team.leader && (
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <Users className="h-4 w-4" />
+            <div className="flex items-center gap-2.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+              <div className="flex items-center justify-center size-5 rounded bg-slate-50 dark:bg-slate-800 text-slate-400">
+                <User className="h-3.5 w-3.5" />
+              </div>
               <span className="truncate">
-                Đội trưởng: {team.leader.fullName}
+                Đội trưởng: <strong className="text-slate-900 dark:text-white font-semibold">{team.leader.fullName}</strong>
               </span>
             </div>
           )}
 
           {/* Member Count */}
           {team.memberCount !== undefined && (
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <Users className="h-4 w-4" />
-              <span>{team.memberCount} thành viên</span>
+            <div className="flex items-center gap-2.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+              <div className="flex items-center justify-center size-5 rounded bg-slate-50 dark:bg-slate-800 text-slate-400">
+                <Users className="h-3.5 w-3.5" />
+              </div>
+              <span>
+                Thành viên: <strong className="text-slate-900 dark:text-white font-semibold">{team.memberCount} người</strong>
+              </span>
             </div>
           )}
 
           {/* Created At */}
-          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-            <Calendar className="h-4 w-4" />
-            <span>Ngày tạo: {formatCreatedAt()}</span>
+          <div className="flex items-center gap-2.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <div className="flex items-center justify-center size-5 rounded bg-slate-50 dark:bg-slate-800 text-slate-400">
+              <Calendar className="h-3.5 w-3.5" />
+            </div>
+            <span>Ngày thành lập: {formatCreatedAt()}</span>
           </div>
 
           {/* Description (truncated) */}
           {team.description && (
-            <p className="text-sm text-slate-500 dark:text-slate-500 line-clamp-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed italic border-l-2 border-slate-200 dark:border-slate-800 pl-2">
               {team.description}
             </p>
           )}
@@ -295,32 +308,33 @@ export default function TeamCard({
 
         {/* Quick Actions */}
         {showActions && (
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 flex gap-2 border-t border-slate-100 dark:border-slate-800/60 pt-3.5">
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 gap-1 text-xs"
+              className="flex-1 gap-1.5 text-xs font-bold rounded-lg border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-950 transition-all cursor-pointer h-9 shadow-sm"
               onClick={(e) => handleActionClick("change_status", e)}
             >
-              <Clock className="h-3 w-3" />
-              Đổi trạng thái
+              <Clock className="h-3.5 w-3.5 text-slate-400" />
+              Trạng thái
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 gap-1 text-xs"
+              className="flex-1 gap-1.5 text-xs font-bold rounded-lg border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-950 transition-all cursor-pointer h-9 shadow-sm"
               onClick={(e) => handleActionClick("assign_mission", e)}
             >
-              <MapPin className="h-3 w-3" />
+              <MapPin className="h-3.5 w-3.5 text-slate-400" />
               Phân công
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1 text-xs"
+              className="gap-1.5 text-xs font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-600 hover:text-blue-700 transition-all cursor-pointer h-9 w-9 p-0 shrink-0"
               onClick={(e) => handleActionClick("view_details", e)}
+              title="Xem chi tiết"
             >
-              <ChevronRight className="h-3 w-3" />
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         )}

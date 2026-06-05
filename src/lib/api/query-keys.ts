@@ -9,6 +9,7 @@ export * from './features/requests/requests.queries'
 export * from './features/rescueTeams/rescueTeams.queries'
 export * from './features/roles/roles.queries'
 export * from './features/users/users.queries'
+export * from './features/checklists/checklists.queries'
 
 export const apiQueryKeys = {
     auth: {
@@ -51,6 +52,10 @@ export const apiQueryKeys = {
         detail: (missionId: string) => ['missions', missionId] as const,
         history: (missionId: string) =>
             ['missions', missionId, 'history'] as const,
+    },
+    checklists: {
+        all: ['checklists'] as const,
+        detail: (checklistId: string) => ['checklists', checklistId] as const,
     },
     reports: {
         all: ['reports'] as const,

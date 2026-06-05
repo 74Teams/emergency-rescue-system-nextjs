@@ -65,7 +65,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import { dictTeamStatus } from '@/constants/dictionary'
+import { dictTeamStatus, dictPriority, dictType } from '@/constants/dictionary'
 import { NotificationBell, NotificationItem } from '@/components/shared/NotificationBell'
 import {
     DropdownMenu,
@@ -95,6 +95,15 @@ import {
     useAddMissionHistoryMutation,
     useAbortMissionMutation,
 } from '@/lib/api/features/missions/rescuer-leader.mutations'
+import { useMissionDetail } from '@/lib/api/features/missions/missions.queries'
+import {
+    useCreateChecklist,
+    useDeleteChecklist,
+    useCreateChecklistItem,
+    useUpdateChecklistItem,
+    useDeleteChecklistItem,
+} from '@/lib/api/features/checklists/checklists.queries'
+import { Trash2, Plus, CheckSquare, Square, ListTodo, Phone } from 'lucide-react'
 import type { MissionSummary } from '@/lib/api/features/missions/missions.types'
 import type { RescueTeamMemberDTO } from '@/lib/api/features/rescueTeams/rescueTeams.types'
 import { getInitials } from '@/lib/utils/initials'
@@ -453,6 +462,10 @@ export default function RescuerLeaderDashboard() {
     const logout = useLogout()
     const [activeTab, setActiveTab] = useState<TabId>('overview')
 
+    // Checklist inputs local states
+    const [newChecklistTitle, setNewChecklistTitle] = useState('')
+    const [newItemTexts, setNewItemTexts] = useState<Record<string, string>>({})
+
     // ── Profile & Team ────────────────────────────────────────────────────────
     const { data: profile, isLoading: isLoadingProfile } = useProfileQuery()
     const teamId = profile?.rescueTeamId ?? ''
@@ -517,6 +530,80 @@ export default function RescuerLeaderDashboard() {
 
     const currentMission =
         activeMissions.length > 0 ? activeMissions[0] : null
+
+    // Load detailed active mission details containing checklists
+    const { data: missionDetail, isLoading: isLoadingMissionDetail } = useMissionDetail(currentMission?.id || '')
+
+    // Mutations for checklist
+    const createChecklist = useCreateChecklist()
+    const deleteChecklist = useDeleteChecklist(currentMission?.id || '')
+    const createChecklistItem = useCreateChecklistItem(currentMission?.id || '')
+    const updateChecklistItem = useUpdateChecklistItem(currentMission?.id || '')
+    const deleteChecklistItem = useDeleteChecklistItem(currentMission?.id || '')
+
+    const handleCreateChecklist = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!newChecklistTitle.trim() || !currentMission) return
+        try {
+            await createChecklist.mutateAsync({
+                title: newChecklistTitle.trim(),
+                missionId: currentMission.id
+            })
+            setNewChecklistTitle('')
+            toast.success('Đã tạo checklist mới.')
+        } catch {
+            toast.error('Không thể tạo checklist.')
+        }
+    }
+
+    const handleCreateItem = async (checklistId: string) => {
+        const text = newItemTexts[checklistId] || ''
+        if (!text.trim()) return
+        try {
+            await createChecklistItem.mutateAsync({
+                checklistId,
+                payload: { description: text.trim() }
+            })
+            setNewItemTexts(prev => ({ ...prev, [checklistId]: '' }))
+            toast.success('Đã thêm mục công việc.')
+        } catch {
+            toast.error('Không thể thêm mục công việc.')
+        }
+    }
+
+    const handleToggleItemCheck = async (itemId: string, description: string, currentChecked: boolean) => {
+        try {
+            await updateChecklistItem.mutateAsync({
+                itemId,
+                payload: {
+                    description,
+                    isCheck: !currentChecked
+                }
+            })
+            toast.success('Đã cập nhật trạng thái mục công việc.')
+        } catch {
+            toast.error('Không thể cập nhật trạng thái.')
+        }
+    }
+
+    const handleDeleteItem = async (itemId: string) => {
+        try {
+            await deleteChecklistItem.mutateAsync(itemId)
+            toast.success('Đã xóa mục công việc.')
+        } catch {
+            toast.error('Không thể xóa mục công việc.')
+        }
+    }
+
+    const handleDeleteChecklist = async (checklistId: string) => {
+        if (!confirm('Bạn có chắc chắn muốn xóa checklist này?')) return
+        try {
+            await deleteChecklist.mutateAsync(checklistId)
+            toast.success('Đã xóa checklist.')
+        } catch {
+            toast.error('Không thể xóa checklist.')
+        }
+    }
 
     const leaderNotifications: NotificationItem[] = useMemo(() => {
         const items: NotificationItem[] = []
@@ -1418,11 +1505,255 @@ export default function RescuerLeaderDashboard() {
                                                             Hủy bỏ nhiệm vụ
                                                         </Button>
                                                     </div>
-                                                </div>
-                                            </div>
+</div>
+
+                                                 {/* Checklist Management Card */}
+                                                 <Card className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                                                     <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                                         <div>
+                                                             <h3 className="font-extrabold text-slate-900 flex items-center gap-2 text-base">
+                                                                 <ListTodo className="w-5 h-5 text-red-500" />
+                                                                 Checklist công việc chi tiết
+                                                             </h3>
+                                                             <p className="text-[11px] text-slate-500 mt-1">Lập danh sách công việc cứu hộ chi tiết cho đội</p>
+                                                         </div>
+                                                     </div>
+
+                                                     {/* Create checklist form */}
+                                                     <form onSubmit={handleCreateChecklist} className="flex gap-2">
+                                                         <input
+                                                             type="text"
+                                                             value={newChecklistTitle}
+                                                             onChange={e => setNewChecklistTitle(e.target.value)}
+                                                             placeholder="Nhập tên checklist mới (VD: Sơ tán tầng 3)..."
+                                                             className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:border-red-500 focus:outline-none"
+                                                             disabled={createChecklist.isPending}
+                                                         />
+                                                         <Button
+                                                             type="submit"
+                                                             className="bg-red-700 hover:bg-red-800 text-white font-bold h-9 text-xs rounded-xl"
+                                                             disabled={createChecklist.isPending}
+                                                         >
+                                                             {createChecklist.isPending ? (
+                                                                 <Loader2 className="w-4 h-4 animate-spin" />
+                                                             ) : (
+                                                                 <Plus className="w-4 h-4 mr-1" />
+                                                             )}
+                                                             Tạo
+                                                         </Button>
+                                                     </form>
+
+                                                     {/* List of checklists */}
+                                                     {isLoadingMissionDetail ? (
+                                                         <div className="flex items-center justify-center py-6 text-slate-400 text-sm">
+                                                             <Loader2 className="w-5 h-5 animate-spin mr-2" /> Đang tải checklist...
+                                                         </div>
+                                                     ) : !missionDetail?.checklists || missionDetail.checklists.length === 0 ? (
+                                                         <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-xs">
+                                                             Nhiệm vụ này chưa có checklist chi tiết. Hãy tạo checklist ở trên.
+                                                         </div>
+                                                     ) : (
+                                                         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                                                             {missionDetail.checklists.map((checklist) => {
+                                                                 const items = checklist.items || []
+                                                                 const doneItems = items.filter((i) => i.isCheck).length
+                                                                 const pct = items.length > 0 ? Math.round((doneItems / items.length) * 100) : 0
+
+                                                                 return (
+                                                                     <div key={checklist.id} className="border border-slate-200/80 rounded-xl p-4 bg-white/40 space-y-3">
+                                                                         <div className="flex items-center justify-between">
+                                                                             <div>
+                                                                                 <h4 className="font-extrabold text-slate-800 text-sm">{checklist.title}</h4>
+                                                                                 <span className="text-[10px] font-bold text-slate-500">Tiến độ: {doneItems}/{items.length} ({pct}%)</span>
+                                                                             </div>
+                                                                             <Button
+                                                                                 variant="ghost"
+                                                                                 size="sm"
+                                                                                 onClick={() => handleDeleteChecklist(checklist.id)}
+                                                                                 className="text-slate-400 hover:text-rose-500 h-8 w-8 p-0"
+                                                                                 disabled={deleteChecklist.isPending}
+                                                                             >
+                                                                                 <Trash2 className="w-4 h-4" />
+                                                                             </Button>
+                                                                         </div>
+
+                                                                         {/* Progress bar */}
+                                                                         <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                                                             <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${pct}%` }} />
+                                                                         </div>
+
+                                                                         {/* Items */}
+                                                                         {items.length > 0 && (
+                                                                             <div className="space-y-2 pt-1">
+                                                                                 {items.map((item) => {
+                                                                                     const itemPending = updateChecklistItem.isPending && updateChecklistItem.variables?.itemId === item.id
+                                                                                     return (
+                                                                                         <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-white/70 border border-slate-100 hover:border-slate-200">
+                                                                                             <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                                                                 <button
+                                                                                                     type="button"
+                                                                                                     onClick={() => handleToggleItemCheck(item.id, item.description, item.isCheck)}
+                                                                                                     disabled={itemPending}
+                                                                                                     className="text-slate-400 hover:text-slate-600 shrink-0"
+                                                                                                 >
+                                                                                                     {itemPending ? (
+                                                                                                         <Loader2 className="w-4 h-4 animate-spin text-orange-500" />
+                                                                                                     ) : item.isCheck ? (
+                                                                                                         <CheckSquare className="w-4.5 h-4.5 text-emerald-500 fill-emerald-50" />
+                                                                                                     ) : (
+                                                                                                         <Square className="w-4.5 h-4.5 text-slate-300" />
+                                                                                                     )}
+                                                                                                 </button>
+                                                                                                 <span className={cn(
+                                                                                                     "text-xs font-semibold truncate",
+                                                                                                     item.isCheck ? "text-slate-400 line-through" : "text-slate-700"
+                                                                                                 )}>
+                                                                                                     {item.description}
+                                                                                                 </span>
+                                                                                             </div>
+                                                                                             <Button
+                                                                                                 variant="ghost"
+                                                                                                 size="sm"
+                                                                                                 onClick={() => handleDeleteItem(item.id)}
+                                                                                                 className="text-slate-400 hover:text-rose-500 h-7 w-7 p-0 shrink-0"
+                                                                                                 disabled={deleteChecklistItem.isPending}
+                                                                                             >
+                                                                                                 <Trash2 className="w-3.5 h-3.5" />
+                                                                                             </Button>
+                                                                                         </div>
+                                                                                     )
+                                                                                 })}
+                                                                             </div>
+                                                                         )}
+
+                                                                         {/* Add item form */}
+                                                                         <div className="flex gap-2 pt-1">
+                                                                             <input
+                                                                                 type="text"
+                                                                                 value={newItemTexts[checklist.id] || ''}
+                                                                                 onChange={e => setNewItemTexts(prev => ({ ...prev, [checklist.id]: e.target.value }))}
+                                                                                 placeholder="Thêm công việc nhỏ..."
+                                                                                 className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:border-red-500 focus:outline-none"
+                                                                                 onKeyDown={e => {
+                                                                                     if (e.key === 'Enter') {
+                                                                                         e.preventDefault()
+                                                                                         handleCreateItem(checklist.id)
+                                                                                     }
+                                                                                 }}
+                                                                             />
+                                                                             <Button
+                                                                                 type="button"
+                                                                                 onClick={() => handleCreateItem(checklist.id)}
+                                                                                 className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold h-7 text-[10px] rounded-lg px-2"
+                                                                                 disabled={createChecklistItem.isPending}
+                                                                             >
+                                                                                 Thêm
+                                                                             </Button>
+                                                                         </div>
+                                                                     </div>
+                                                                 )
+                                                             })}
+                                                         </div>
+                                                     )}
+                                                 </Card>
+
+</div>
 
                                             {/* Team members sidebar */}
                                             <div className="space-y-4">
+                                                {/* Incident Request Details Card */}
+                                                <Card className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                                                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                                        <h3 className="font-extrabold text-slate-900 flex items-center gap-2 text-base">
+                                                            <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                                            Thông tin yêu cầu cứu hộ
+                                                        </h3>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        {missionDetail?.request ? (
+                                                            <div className="space-y-4">
+                                                                {/* Emergency type & priority */}
+                                                                <div className="flex gap-2 flex-wrap">
+                                                                    <Badge variant="outline" className="text-xs font-bold text-blue-600 border-blue-200 bg-blue-50/50">
+                                                                        {dictType[missionDetail.request.emergencyType] || missionDetail.request.emergencyType}
+                                                                    </Badge>
+                                                                    <Badge variant="outline" className={cn("text-xs font-bold border-0", 
+                                                                        missionDetail.request.priority === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+                                                                        missionDetail.request.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                                                                        missionDetail.request.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
+                                                                        'bg-blue-100 text-blue-700'
+                                                                    )}>
+                                                                        {dictPriority[missionDetail.request.priority] || missionDetail.request.priority}
+                                                                    </Badge>
+                                                                </div>
+
+                                                                {/* Description */}
+                                                                <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-xl">
+                                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nội dung chi tiết</span>
+                                                                    <p className="text-xs text-slate-700 leading-relaxed italic whitespace-pre-wrap">
+                                                                        "{missionDetail.request.description || 'Không có mô tả chi tiết từ người gửi.'}"
+                                                                    </p>
+                                                                </div>
+
+                                                                {/* Sender/Contact Info */}
+                                                                {missionDetail.request.requestedBy && (
+                                                                    <div className="p-3 bg-red-50/10 border border-red-100/30 rounded-xl space-y-2">
+                                                                        <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">Thông tin liên hệ người báo cáo</span>
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-8 h-8 rounded-full bg-red-100 text-red-650 flex items-center justify-center font-bold text-xs shrink-0">
+                                                                                {missionDetail.request.requestedBy.fullName?.charAt(0).toUpperCase()}
+                                                                            </div>
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <p className="text-xs font-bold text-slate-800 truncate">{missionDetail.request.requestedBy.fullName}</p>
+                                                                                <p className="text-[10px] text-slate-500 truncate">{missionDetail.request.requestedBy.email || 'Không có email'}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        {missionDetail.request.requestedBy.phoneNumber && (
+                                                                            <a 
+                                                                                href={`tel:${missionDetail.request.requestedBy.phoneNumber}`}
+                                                                                className="mt-1 flex items-center justify-center gap-2 w-full py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-extrabold text-slate-700 transition-colors shadow-sm"
+                                                                            >
+                                                                                <Phone size={12} className="text-slate-500" />
+                                                                                Gọi: {missionDetail.request.requestedBy.phoneNumber}
+                                                                            </a>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Location / Address */}
+                                                                <div className="space-y-1 bg-slate-50/50 border border-slate-100 p-3 rounded-xl">
+                                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Địa điểm sự cố</span>
+                                                                    <div className="flex gap-2 items-start text-xs text-slate-755">
+                                                                        <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                                                                        <span className="leading-relaxed font-semibold">{missionDetail.request.location?.address || 'Chưa xác định địa chỉ'}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Scene Photos (Medias) */}
+                                                                {missionDetail.request.medias && missionDetail.request.medias.length > 0 && (
+                                                                    <div className="space-y-2">
+                                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Hình ảnh hiện trường ({missionDetail.request.medias.length})</span>
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            {missionDetail.request.medias.map((media: any) => (
+                                                                                <div key={media.id} className="relative aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200 group">
+                                                                                    <img 
+                                                                                        src={media.secureUrl || media.mediaUrl} 
+                                                                                        alt="Incident scene" 
+                                                                                        className="object-cover w-full h-full hover:scale-105 transition-transform duration-300 cursor-zoom-in"
+                                                                                        onClick={() => window.open(media.secureUrl || media.mediaUrl, '_blank')}
+                                                                                    />
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-xs text-slate-400 italic">Đang tải thông tin...</div>
+                                                        )}
+                                                    </div>
+                                                </Card>
+
                                                 <div className="bg-white/60 border border-slate-200 rounded-2xl p-5">
                                                     <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                                                         <Users className="w-4 h-4 text-slate-500" />

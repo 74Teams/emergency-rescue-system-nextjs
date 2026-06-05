@@ -280,7 +280,7 @@ export function RequestsTable({
               setAssignDialogOpen(true);
             }}
             onViewTeamDetails={(teamId) => {
-              router.push(`/dispatcher?view=teams&teamId=${teamId}`);
+              router.push(`/dashboard/dispatcher?view=teams&teamId=${teamId}`);
             }}
           />
         </div>

@@ -39,56 +39,167 @@ const shadcnIcon = new L.DivIcon({
   popupAnchor: [0, -32],
 });
 
-const rescuePinIcons: Record<string, L.DivIcon> = {
-  PENDING: new L.DivIcon({
-    className: "bg-transparent border-none",
-    html: `
-      <div class="relative flex items-center justify-center w-6 h-6">
-        <span class="absolute inline-flex w-full h-full bg-amber-500 rounded-full opacity-75 animate-ping"></span>
-        <div class="relative w-3 h-3 bg-amber-600 rounded-full border-2 border-white shadow-sm"></div>
-      </div>
-    `,
-    iconSize: [24, 24],
-  }),
-  IN_PROGRESS: new L.DivIcon({
-    className: "bg-transparent border-none",
-    html: `
-      <div class="relative flex items-center justify-center w-6 h-6">
-        <span class="absolute inline-flex w-full h-full bg-blue-500 rounded-full opacity-75 animate-ping"></span>
-        <div class="relative w-3 h-3 bg-blue-600 rounded-full border-2 border-white shadow-sm"></div>
-      </div>
-    `,
-    iconSize: [24, 24],
-  }),
-  RESOLVED: new L.DivIcon({
-    className: "bg-transparent border-none",
-    html: `
-      <div class="relative flex items-center justify-center w-6 h-6">
-        <div class="relative w-3 h-3 bg-emerald-600 rounded-full border-2 border-white shadow-sm"></div>
-      </div>
-    `,
-    iconSize: [24, 24],
-  }),
-  CLOSED: new L.DivIcon({
-    className: "bg-transparent border-none",
-    html: `
-      <div class="relative flex items-center justify-center w-6 h-6">
-        <div class="relative w-3 h-3 bg-slate-500 rounded-full border-2 border-white shadow-sm"></div>
-      </div>
-    `,
-    iconSize: [24, 24],
-  }),
-  DEFAULT: new L.DivIcon({
-    className: "bg-transparent border-none",
-    html: `
-      <div class="relative flex items-center justify-center w-6 h-6">
-        <span class="absolute inline-flex w-full h-full bg-red-500 rounded-full opacity-75 animate-ping"></span>
-        <div class="relative w-3 h-3 bg-red-600 rounded-full border-2 border-white shadow-sm"></div>
-      </div>
-    `,
-    iconSize: [24, 24],
-  }),
-};
+function getStatusColor(status: string) {
+  switch (status) {
+    case "PENDING":
+      return {
+        hex: "#f59e0b",
+        border: "border-amber-500",
+        bg: "bg-amber-500",
+        text: "text-amber-500",
+        ping: "bg-amber-500",
+      };
+    case "IN_PROGRESS":
+      return {
+        hex: "#3b82f6",
+        border: "border-blue-600",
+        bg: "bg-blue-600",
+        text: "text-blue-600",
+        ping: "bg-blue-500",
+      };
+    case "RESOLVED":
+      return {
+        hex: "#10b981",
+        border: "border-emerald-500",
+        bg: "bg-emerald-500",
+        text: "text-emerald-500",
+        ping: "",
+      };
+    case "CLOSED":
+      return {
+        hex: "#64748b",
+        border: "border-slate-500",
+        bg: "bg-slate-500",
+        text: "text-slate-500",
+        ping: "",
+      };
+    default:
+      return {
+        hex: "#ef4444",
+        border: "border-red-600",
+        bg: "bg-red-600",
+        text: "text-red-600",
+        ping: "bg-red-500",
+      };
+  }
+}
+
+function getEmergencyIconSvg(type: string, colorClass: string = "text-slate-600") {
+  const isFire = type === "FIRE";
+  const baseClasses = `w-3.5 h-3.5 ${colorClass}`;
+  
+  if (isFire) {
+    return `
+      <svg class="${baseClasses}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+      </svg>
+    `;
+  }
+
+  switch (type) {
+    case "FLOOD":
+      return `
+        <svg class="${baseClasses}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 6c.6 0 1.2-.2 1.7-.6L5.3 4.3c.9-.9 2.4-.9 3.4 0l1.6 1.1c.9.9 2.4.9 3.4 0l1.6-1.1c.9-.9 2.4-.9 3.4 0l1.6 1.1c.5.4 1.1.6 1.7.6" />
+          <path d="M2 12c.6 0 1.2-.2 1.7-.6L5.3 10.3c.9-.9 2.4-.9 3.4 0l1.6 1.1c.9.9 2.4.9 3.4 0l1.6-1.1c.9-.9 2.4-.9 3.4 0l1.6 1.1c.5.4 1.1.6 1.7.6" />
+          <path d="M2 18c.6 0 1.2-.2 1.7-.6L5.3 16.3c.9-.9 2.4-.9 3.4 0l1.6 1.1c.9.9 2.4.9 3.4 0l1.6-1.1c.9-.9 2.4-.9 3.4 0l1.6 1.1c.5.4 1.1.6 1.7.6" />
+        </svg>
+      `;
+    case "MEDICAL":
+      return `
+        <svg class="${baseClasses}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      `;
+    case "LANDSLIDE":
+    case "EARTHQUAKE":
+      return `
+        <svg class="${baseClasses}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 9v4M12 17h.01M21 19a2 2 0 01-1.73 1H4.73a2 2 0 01-1.73-3L10.27 4a2 2 0 013.46 0l7.27 13A2 2 0 0121 19z" />
+        </svg>
+      `;
+    case "TRAFFIC":
+      return `
+        <svg class="${baseClasses}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 001 13v3c0 .6.4 1 1 1h2a3 3 0 006 0h4a3 3 0 006 0z" />
+        </svg>
+      `;
+    case "COLLAPSE":
+      return `
+        <svg class="${baseClasses}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 21h18M6 21V4a2 2 0 012-2h8a2 2 0 012 2v17M9 9h6M9 13h6" />
+        </svg>
+      `;
+    default:
+      return `
+        <svg class="${baseClasses}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" />
+        </svg>
+      `;
+  }
+}
+
+function createRequestIcon(request: RequestDetail) {
+  const mediaUrls = request.mediaUrl ?? [];
+  const hasImage = mediaUrls.length > 0 && mediaUrls[0];
+  const status = request.status || "DEFAULT";
+  const color = getStatusColor(status);
+
+  if (hasImage) {
+    return new L.DivIcon({
+      className: "bg-transparent border-none",
+      iconSize: [44, 50],
+      iconAnchor: [22, 50],
+      popupAnchor: [0, -50],
+      html: `
+        <div class="relative flex flex-col items-center w-11 h-[50px]">
+          <!-- Pulse ring -->
+          ${color.ping ? `<span class="absolute top-0 inline-flex w-11 h-11 ${color.ping} rounded-full opacity-40 animate-ping"></span>` : ""}
+          
+          <!-- Image container -->
+          <div class="relative w-11 h-11 rounded-full bg-white overflow-hidden shadow-lg z-10 flex items-center justify-center" style="border: 3px solid ${color.hex};">
+            <img src="${mediaUrls[0]}" class="w-full h-full object-cover" style="width: 100%; height: 100%; border-radius: 9999px; object-fit: cover;" alt="Rescue Request" />
+          </div>
+          
+          <!-- Pin tail pointing to coordinate -->
+          <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] -mt-0.5 z-10" style="border-top-color: ${color.hex};"></div>
+
+          <!-- Emergency category badge (top-right overlay) -->
+          <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full ${color.bg} border border-white flex items-center justify-center shadow-md z-20">
+            ${getEmergencyIconSvg(request.emergencyType, "text-white")}
+          </div>
+        </div>
+      `,
+    });
+  } else {
+    return new L.DivIcon({
+      className: "bg-transparent border-none",
+      iconSize: [36, 46],
+      iconAnchor: [18, 46],
+      popupAnchor: [0, -46],
+      html: `
+        <div class="relative flex flex-col items-center w-9 h-[46px]">
+          <!-- Pulse ring -->
+          ${color.ping ? `<span class="absolute top-0 inline-flex w-9 h-9 ${color.ping} rounded-full opacity-40 animate-ping"></span>` : ""}
+          
+          <!-- SVG Pin -->
+          <div class="relative z-10 w-9 h-[46px] filter drop-shadow-md">
+            <svg width="36" height="46" viewBox="0 0 36 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 0C8.05888 0 0 8.05888 0 18C0 29.8333 18 46 18 46C18 46 36 29.8333 36 18C36 8.05888 27.9411 0 18 0Z" fill="${color.hex}"/>
+              <circle cx="18" cy="18" r="11" fill="white"/>
+            </svg>
+            <!-- Emergency category icon overlay -->
+            <div class="absolute top-[6px] left-[6px] w-6 h-6 flex items-center justify-center">
+              ${getEmergencyIconSvg(request.emergencyType, color.text)}
+            </div>
+          </div>
+        </div>
+      `,
+    });
+  }
+}
+
 
 function getPopupHeaderConfig(status: string) {
   const cfg: Record<string, { headerBg: string; text: string; dot: string; ping: string | null }> = {
@@ -252,6 +363,68 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
 
   const mapRef = useRef<LeafletMap | null>(null);
 
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+
+  const filterOptions = [
+    {
+      label: "Chờ xử lý",
+      statuses: ["PENDING"],
+      color: "bg-amber-500",
+      activeBg: "bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400",
+      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+    },
+    {
+      label: "Đã tiếp nhận",
+      statuses: ["ACCEPTED"],
+      color: "bg-orange-500",
+      activeBg: "bg-orange-500/10 border-orange-500 text-orange-650 dark:text-orange-400",
+      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+    },
+    {
+      label: "Đang xử lý",
+      statuses: ["IN_PROGRESS"],
+      color: "bg-blue-650",
+      activeBg: "bg-blue-650/10 border-blue-650 text-blue-650 dark:text-blue-400",
+      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+    },
+    {
+      label: "Đã giải quyết",
+      statuses: ["COMPLETED", "RESOLVED", "CLOSED"],
+      color: "bg-emerald-500",
+      activeBg: "bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400",
+      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+    },
+    {
+      label: "Đã hủy",
+      statuses: ["CANCELED", "REJECTED", "ABORTED"],
+      color: "bg-slate-500",
+      activeBg: "bg-slate-500/10 border-slate-500 text-slate-600 dark:text-slate-400",
+      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+    }
+  ];
+
+  const handleToggleFilter = (label: string) => {
+    setSelectedFilters((prev) =>
+      prev.includes(label)
+        ? prev.filter((item) => item !== label)
+        : [...prev, label]
+    );
+  };
+
+  const handleResetFilters = () => {
+    setSelectedFilters([]);
+  };
+
+  const getCount = (statuses: string[]) => {
+    return requests.filter(r => statuses.includes(r.status)).length;
+  };
+
+  const filteredRequests = requests.filter((req) => {
+    if (selectedFilters.length === 0) return true;
+    const activeOptions = filterOptions.filter(opt => selectedFilters.includes(opt.label));
+    return activeOptions.some(opt => opt.statuses.includes(req.status));
+  });
+
   useEffect(() => {
     const handleMoveMap = (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -363,8 +536,8 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
             url={MAP_LAYERS[layerIndex].url}
           />
 
-          {requests &&
-            requests.map((request) => {
+          {filteredRequests &&
+            filteredRequests.map((request) => {
               const cfg = getPopupHeaderConfig(request.status);
               return (
                 <Marker
@@ -373,7 +546,7 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
                     request.location?.latitude || 16.0544,
                     request.location?.longitude || 108.2022,
                   ]}
-                  icon={rescuePinIcons[request.status] ?? rescuePinIcons.DEFAULT}
+                  icon={createRequestIcon(request)}
                 >
                   <Popup className="shadcn-popup">
                     <div className="flex flex-col w-[200px] bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
@@ -438,6 +611,63 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
             </Popup>
           </Marker>
         </MapContainer>
+      </div>
+
+      {/* Status Filter Floating Panel */}
+      <div className="absolute top-4 right-4 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-lg flex flex-col gap-2 max-w-[280px] md:max-w-[340px] animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto">
+        <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-850">
+          <div className="flex items-center gap-1.5">
+            <span className="flex h-1.5 w-1.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Trạng thái sự cố
+            </span>
+          </div>
+          {selectedFilters.length > 0 && (
+            <button
+              onClick={handleResetFilters}
+              className="text-[9px] font-black text-blue-600 hover:text-blue-705 dark:text-blue-400 transition-colors cursor-pointer"
+            >
+              Đặt lại
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {/* Tất cả button */}
+          <button
+            onClick={handleResetFilters}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-black transition-all active:scale-95 cursor-pointer shadow-3xs",
+              selectedFilters.length === 0
+                ? "bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-450"
+                : "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-550 dark:text-slate-400"
+            )}
+          >
+            <span className={cn("w-1.5 h-1.5 rounded-full", selectedFilters.length === 0 ? "bg-blue-500 animate-pulse" : "bg-slate-400")} />
+            Tất cả ({requests.length})
+          </button>
+
+          {/* Individual status buttons */}
+          {filterOptions.map((opt) => {
+            const isActive = selectedFilters.includes(opt.label);
+            const count = getCount(opt.statuses);
+            return (
+              <button
+                key={opt.label}
+                onClick={() => handleToggleFilter(opt.label)}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-black transition-all active:scale-95 cursor-pointer shadow-3xs",
+                  isActive ? opt.activeBg : opt.inactiveBg
+                )}
+              >
+                <span className={cn("w-1.5 h-1.5 rounded-full", opt.color, isActive && "animate-pulse")} />
+                {opt.label} ({count})
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="absolute bottom-20 right-6 z-10 flex flex-col gap-3 items-end pointer-events-none">

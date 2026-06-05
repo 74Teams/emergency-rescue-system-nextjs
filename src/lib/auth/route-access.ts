@@ -32,10 +32,10 @@ export function isAuthRequiredPath(pathname: string): boolean {
 }
 
 export function getProtectedRoles(pathname: string): StaffRole[] | null {
-    if (pathname.startsWith('/commander')) return COMMANDER_ROLES
-    if (pathname.startsWith('/dispatcher')) return DISPATCHER_ROLES
-    if (pathname.startsWith('/rescuer-leader')) return RESCUER_LEADER_ROLES
-    if (pathname.startsWith('/rescuer')) return RESCUER_ROLES
+    if (pathname.startsWith('/dashboard/commander')) return COMMANDER_ROLES
+    if (pathname.startsWith('/dashboard/dispatcher')) return DISPATCHER_ROLES
+    if (pathname.startsWith('/dashboard/rescuer-leader')) return RESCUER_LEADER_ROLES
+    if (pathname.startsWith('/dashboard/rescuer')) return RESCUER_ROLES
     return null
 }
 
@@ -81,10 +81,10 @@ export function resolvePostLoginPath(
     }
 
     // Ưu tiên check quyền từ cao xuống thấp
-    if (hasAnyRole(userRoles, COMMANDER_ROLES)) return '/commander'
-    if (hasAnyRole(userRoles, DISPATCHER_ROLES)) return '/dispatcher'
-    if (hasAnyRole(userRoles, RESCUER_LEADER_ROLES)) return '/rescuer-leader'
-    if (hasAnyRole(userRoles, RESCUER_ROLES)) return '/rescuer'
+    if (hasAnyRole(userRoles, COMMANDER_ROLES)) return '/dashboard/commander'
+    if (hasAnyRole(userRoles, DISPATCHER_ROLES)) return '/dashboard/dispatcher'
+    if (hasAnyRole(userRoles, RESCUER_LEADER_ROLES)) return '/dashboard/rescuer-leader'
+    if (hasAnyRole(userRoles, RESCUER_ROLES)) return '/dashboard/rescuer'
 
     return '/'
 }

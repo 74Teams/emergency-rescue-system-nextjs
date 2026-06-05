@@ -38,7 +38,21 @@ export const missionsApi = {
     },
     detail(missionId: string) {
         return apiRequest<
-            ApiResponse<MissionSummary & { request?: any; rescueTeam?: any }>
+            ApiResponse<
+                MissionSummary & {
+                    request?: any
+                    rescueTeam?: any
+                    checklists?: {
+                        id: string
+                        title: string
+                        items: {
+                            id: string
+                            description: string
+                            isCheck: boolean
+                        }[]
+                    }[]
+                }
+            >
         >({
             method: 'GET',
             url: apiRouteBuilders.missions.byId(missionId),

@@ -460,7 +460,7 @@ export default function MissionDetailPage({
                     thông tin chi tiết này.
                 </p>
                 <Button
-                    onClick={() => router.push('/dispatcher?view=missions')}
+                    onClick={() => router.push('/dashboard/dispatcher?view=missions')}
                     className="mt-6 bg-[#003da5] hover:bg-blue-800 text-white font-bold"
                 >
                     <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại Dashboard
@@ -486,7 +486,7 @@ export default function MissionDetailPage({
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push('/dispatcher?view=missions')}
+                        onClick={() => router.push('/dashboard/dispatcher?view=missions')}
                         className="w-fit border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold"
                     >
                         <ChevronLeft className="w-4 h-4 mr-1.5" /> Trở về

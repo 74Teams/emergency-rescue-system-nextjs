@@ -576,7 +576,7 @@ export function MissionsPanel({ missions, teams, requests }: Props) {
                           variant="outline"
                           size="sm"
                           className="h-8 text-xs font-semibold text-blue-600 hover:text-white border-blue-200 dark:border-blue-900/60 hover:border-blue-600 hover:bg-blue-600 rounded-lg transition-all duration-200 shadow-sm flex items-center ml-auto gap-1"
-                          onClick={() => router.push(`/dispatcher/missions/${m.id}`)}
+                          onClick={() => router.push(`/dashboard/dispatcher/missions/${m.id}`)}
                         >
                           <Eye className="w-3.5 h-3.5" />
                           Chi tiết

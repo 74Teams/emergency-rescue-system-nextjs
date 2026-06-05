@@ -22,6 +22,7 @@ export const apiRoutes = {
     reports: '/reports',
     roles: '/roles',
     joinRequests: '/rescueteam/join-requests',
+    checklists: '/checklist',
 } as const
 
 export const apiRouteBuilders = {
@@ -59,6 +60,11 @@ export const apiRouteBuilders = {
             `${apiRoutes.missions}/${missionId}/abort`,
         history: (missionId: string) =>
             `${apiRoutes.missions}/${missionId}/history`,
+    },
+    checklists: {
+        byId: (checklistId: string) => `${apiRoutes.checklists}/${checklistId}`,
+        items: (checklistId: string) => `${apiRoutes.checklists}/${checklistId}/items`,
+        itemById: (itemId: string) => `${apiRoutes.checklists}/items/${itemId}`,
     },
     reports: {
         byId: (reportId: string) => `${apiRoutes.reports}/${reportId}`,

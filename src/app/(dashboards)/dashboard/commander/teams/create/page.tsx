@@ -108,7 +108,7 @@ export default function CreateTeamPage() {
       });
 
       toast.success("Khởi tạo Đội cứu hộ thành công!");
-      router.push("/commander"); // Chuyển hướng về trang Dashboard
+      router.push("/dashboard/commander"); // Chuyển hướng về trang Dashboard
     } catch (error) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "Lỗi khi khởi tạo đội.");

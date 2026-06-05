@@ -46,8 +46,8 @@ import type {
 import { getApiErrorMessage } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 import {
-    Activity,
     AlertTriangle,
+    LifeBuoy,
     Camera,
     CheckCircle2,
     Clock,
@@ -150,57 +150,76 @@ function RequestCard({
         return `${Math.floor(diff / 86400)} ngày trước`
     }, [request.createdAt])
 
+    const mediaUrls = request.mediaUrl ?? []
+    const hasImage = mediaUrls.length > 0 && mediaUrls[0]
+
     return (
         <button
             type="button"
             onClick={onClick}
             className="w-full text-left px-3 py-3 rounded-lg border border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all group"
         >
-            {/* Type + Priority */}
-            <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <AlertTriangle className="size-3.5 text-orange-500 shrink-0" />
-                    {dictType[request.emergencyType] ?? request.emergencyType}
-                </span>
-                <span className="text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded">
-                    {dictPriority[request.priority] ?? request.priority}
-                </span>
-            </div>
+            <div className="flex gap-3 items-start">
+                <div className="flex-1 min-w-0">
+                    {/* Type + Priority */}
+                    <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <AlertTriangle className="size-3.5 text-orange-500 shrink-0" />
+                            {dictType[request.emergencyType] ?? request.emergencyType}
+                        </span>
+                        <span className="text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded">
+                            {dictPriority[request.priority] ?? request.priority}
+                        </span>
+                    </div>
 
-            {/* Location */}
-            <div className="flex items-start gap-1.5 mb-1.5">
-                <MapPin className="size-3 text-slate-400 shrink-0 mt-0.5" />
-                <span className="text-[11px] text-slate-500 line-clamp-1">
-                    {request.location?.address ?? 'Chưa có địa chỉ'}
-                </span>
-            </div>
+                    {/* Location */}
+                    <div className="flex items-start gap-1.5 mb-1.5">
+                        <MapPin className="size-3 text-slate-400 shrink-0 mt-0.5" />
+                        <span className="text-[11px] text-slate-500 line-clamp-1">
+                            {request.location?.address ?? 'Chưa có địa chỉ'}
+                        </span>
+                    </div>
 
-            {/* Description */}
-            {request.description && (
-                <div className="mb-2 text-[11px] text-slate-600 line-clamp-2 italic">
-                    {request.description}
-                </div>
-            )}
-
-            {/* Status + Time */}
-            <div className="flex items-center justify-between">
-                <span
-                    className={cn(
-                        'inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border',
-                        status.color
+                    {/* Description */}
+                    {request.description && (
+                        <div className="mb-2 text-[11px] text-slate-600 line-clamp-2 italic">
+                            {request.description}
+                        </div>
                     )}
-                >
-                    <span
-                        className={cn(
-                            'size-1.5 rounded-full shrink-0',
-                            status.dot
-                        )}
-                    />
-                    {dictStatus[request.status] ?? request.status}
-                </span>
-                <span className="text-[10px] text-slate-400 font-mono">
-                    {timeAgo}
-                </span>
+
+                    {/* Status + Time */}
+                    <div className="flex items-center justify-between">
+                        <span
+                            className={cn(
+                                'inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border',
+                                status.color
+                            )}
+                        >
+                            <span
+                                className={cn(
+                                    'size-1.5 rounded-full shrink-0',
+                                    status.dot
+                                )}
+                            />
+                            {dictStatus[request.status] ?? request.status}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                            {timeAgo}
+                        </span>
+                    </div>
+                </div>
+
+                {hasImage && (
+                    <div className="relative size-16 shrink-0 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 shadow-sm self-center">
+                        <Image
+                            src={mediaUrls[0]}
+                            alt="Rescue Request Thumbnail"
+                            fill
+                            unoptimized
+                            className="object-cover"
+                        />
+                    </div>
+                )}
             </div>
         </button>
     )
@@ -662,9 +681,9 @@ export function CitizenSidebar() {
                 {/* ── HEADER ── */}
                 <SidebarHeader className="px-4 py-3 bg-white border-b border-slate-200 shrink-0">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 group cursor-pointer">
                             <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white shrink-0">
-                                <Activity className="size-4 stroke-[2.5]" />
+                                <LifeBuoy className="size-4 stroke-[2.5] transition-transform duration-500 group-hover:rotate-45" />
                             </div>
                             <span className="text-sm font-black text-slate-900">
                                 Yêu cầu cứu trợ

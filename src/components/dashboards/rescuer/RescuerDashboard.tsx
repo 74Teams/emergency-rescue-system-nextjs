@@ -68,7 +68,10 @@ import RescuerProfile from '@/components/dashboards/rescuer/RescuerProfile'
 import RescuerCurrentMission from '@/components/dashboards/rescuer/RescuerCurrentMission'
 import LeaveRequestModal from '@/components/dashboards/rescuer/LeaveRequestModal'
 import RescuerOnboarding from '@/components/dashboards/rescuer/RescuerOnboarding'
-import { NotificationBell, NotificationItem } from '@/components/shared/NotificationBell'
+import {
+    NotificationBell,
+    NotificationItem,
+} from '@/components/shared/NotificationBell'
 import { useMyLeaveRequests } from '@/lib/api/features/leaveRequests/leaveRequests.queries'
 import { useProfileQuery } from '@/lib/api/features/auth/auth.queries'
 import {
@@ -114,9 +117,20 @@ export default function RescuerDashboard() {
     const { data: teamMembers, isLoading: isLoadingMembers } =
         useRescueTeamMembers(teamId || null)
 
-    const { mutate: toggleUserStatus, isPending: isTogglingStatus } = useToggleUserStatus()
+    const teamDetailsWithMembers = useMemo(() => {
+        if (!teamDetails) return null
+        return {
+            ...teamDetails,
+            members: teamMembers || [],
+        }
+    }, [teamDetails, teamMembers])
 
-    const currentUserMember = teamMembers?.find((m: any) => m.id === profile?.id)
+    const { mutate: toggleUserStatus, isPending: isTogglingStatus } =
+        useToggleUserStatus()
+
+    const currentUserMember = teamMembers?.find(
+        (m: any) => m.id === profile?.id
+    )
     const isUserActive = currentUserMember?.isActive ?? true
 
     const { data: leaveRequests } = useMyLeaveRequests()
@@ -126,7 +140,7 @@ export default function RescuerDashboard() {
         if (!leaveRequests) return []
         return leaveRequests.filter((req: any) => {
             if (req.status === 'PENDING') return false
-            const updatedDateStr = req.updatedAt.split('T')[0]
+            const updatedDateStr = req.updatedAt?.split('T')?.[0]
             return updatedDateStr === todayStr
         })
     }, [leaveRequests, todayStr])
@@ -136,12 +150,17 @@ export default function RescuerDashboard() {
         const RECENT_THRESHOLD_MS = 30 * 60 * 1000 // 30 mins
         const now = Date.now()
         return missions.filter((m: any) => {
-            if (m.status !== "EN_ROUTE" && m.status !== "ABORTED") return false
-            const ts = m.updateAt || (m as any).updatedAt || m.createdAt || (m as any).createAt
+            if (m.status !== 'EN_ROUTE' && m.status !== 'ABORTED') return false
+            const ts =
+                m.updateAt ||
+                (m as any).updatedAt ||
+                m.createdAt ||
+                (m as any).createAt
             if (!ts) return false
-            // Backend sends Local Time (UTC+7) but might falsely append 'Z' because DateTimeKind is Utc
             const cleanTs = ts.replace('Z', '').replace('+00:00', '')
-            const tsWithZone = cleanTs.includes('+') ? cleanTs : cleanTs + '+07:00'
+            const tsWithZone = cleanTs.includes('+')
+                ? cleanTs
+                : cleanTs + '+07:00'
             const elapsed = now - new Date(tsWithZone).getTime()
             return elapsed >= 0 && elapsed <= RECENT_THRESHOLD_MS
         })
@@ -150,44 +169,96 @@ export default function RescuerDashboard() {
     const rescuerNotifications: NotificationItem[] = useMemo(() => {
         const items: NotificationItem[] = []
         if (recentNotifications.length > 0) {
-            items.push(...recentNotifications.map((req: any) => ({
-                id: `leave_${req.id}_${req.status}`,
-                title: <p className={cn("text-sm font-bold", req.status === 'APPROVED' ? "text-emerald-600" : "text-rose-600")}>Đơn xin phép {req.status === 'APPROVED' ? 'đã được duyệt' : 'bị từ chối'}</p>,
-                description: (
-                    <>
-                        <p className="text-xs text-slate-500">Nghỉ từ {format(new Date(req.startTime), 'dd/MM/yyyy')} đến {format(new Date(req.endTime), 'dd/MM/yyyy')}</p>
-                        {req.note && <p className="text-[10px] text-slate-400 mt-1 bg-slate-50 p-1.5 rounded w-full">Ghi chú: {req.note}</p>}
-                    </>
-                ),
-                timestamp: req.updatedAt || new Date().toISOString(),
-                onClick: () => setActiveTab('profile')
-            })))
-        }
-
-        if (recentMissionUpdates.length > 0) {
-            items.push(...recentMissionUpdates.map((mission: any) => {
-                const isAccepted = mission.status === 'EN_ROUTE'
-                const ts = mission.updateAt || mission.updatedAt || mission.createdAt || mission.createAt || new Date().toISOString()
-                return {
-                    id: `mis_${mission.id}_${mission.status}_${ts}`,
+            items.push(
+                ...recentNotifications.map((req: any) => ({
+                    id: `leave_${req.id}_${req.status}`,
                     title: (
-                        <p className={cn("text-sm font-bold", isAccepted ? 'text-emerald-600' : 'text-rose-600')}>
-                            {isAccepted ? '✅ Nhiệm vụ đã tiếp nhận' : '❌ Nhiệm vụ bị hủy'}
+                        <p
+                            className={cn(
+                                'text-sm font-bold',
+                                req.status === 'APPROVED'
+                                    ? 'text-emerald-600'
+                                    : 'text-rose-600'
+                            )}
+                        >
+                            Đơn xin phép{' '}
+                            {req.status === 'APPROVED'
+                                ? 'đã được duyệt'
+                                : 'bị từ chối'}
                         </p>
                     ),
                     description: (
-                        <p className="text-xs text-slate-500 truncate w-full">
-                            Đội trưởng vừa {isAccepted ? 'xác nhận di chuyển' : 'hủy/từ chối'} nhiệm vụ.
-                        </p>
+                        <>
+                            <p className="text-xs text-slate-500">
+                                Nghỉ từ{' '}
+                                {format(new Date(req.startTime), 'dd/MM/yyyy')}{' '}
+                                đến{' '}
+                                {format(new Date(req.endTime), 'dd/MM/yyyy')}
+                            </p>
+                            {req.note && (
+                                <p className="text-[10px] text-slate-400 mt-1 bg-slate-50 p-1.5 rounded w-full">
+                                    Ghi chú: {req.note}
+                                </p>
+                            )}
+                        </>
                     ),
-                    timestamp: mission.updateAt || mission.createdAt || new Date().toISOString(),
-                    onClick: () => setActiveTab('current_mission')
-                }
-            }))
+                    timestamp: req.updatedAt || new Date().toISOString(),
+                    onClick: () => setActiveTab('profile'),
+                }))
+            )
+        }
+
+        if (recentMissionUpdates.length > 0) {
+            items.push(
+                ...recentMissionUpdates.map((mission: any) => {
+                    const isAccepted = mission.status === 'EN_ROUTE'
+                    const ts =
+                        mission.updateAt ||
+                        mission.updatedAt ||
+                        mission.createdAt ||
+                        mission.createAt ||
+                        new Date().toISOString()
+                    return {
+                        id: `mis_${mission.id}_${mission.status}_${ts}`,
+                        title: (
+                            <p
+                                className={cn(
+                                    'text-sm font-bold',
+                                    isAccepted
+                                        ? 'text-emerald-600'
+                                        : 'text-rose-600'
+                                )}
+                            >
+                                {isAccepted
+                                    ? '✅ Nhiệm vụ đã tiếp nhận'
+                                    : '❌ Nhiệm vụ bị hủy'}
+                            </p>
+                        ),
+                        description: (
+                            <p className="text-xs text-slate-500 truncate w-full">
+                                Đội trưởng vừa{' '}
+                                {isAccepted
+                                    ? 'xác nhận di chuyển'
+                                    : 'hủy/từ chối'}{' '}
+                                nhiệm vụ.
+                            </p>
+                        ),
+                        timestamp:
+                            mission.updateAt ||
+                            mission.createdAt ||
+                            new Date().toISOString(),
+                        onClick: () => setActiveTab('current_mission'),
+                    }
+                })
+            )
         }
 
         // Sắp xếp lại theo thời gian mới nhất
-        return items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        return items.sort(
+            (a, b) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime()
+        )
     }, [recentNotifications, recentMissionUpdates])
 
     // Derived states
@@ -214,8 +285,21 @@ export default function RescuerDashboard() {
     const totalCompleted = historyMissions.filter(
         m => m.status === 'COMPLETED'
     ).length
-    // Giả sử mỗi mission ~2 giờ (để demo stats)
-    const totalHours = totalCompleted * 2
+
+    const totalHours = useMemo(() => {
+        let hours = 0
+        historyMissions.forEach((m: MissionSummary) => {
+            if (m.status === 'COMPLETED' && m.startTime && m.endTime) {
+                const diff =
+                    new Date(m.endTime).getTime() -
+                    new Date(m.startTime).getTime()
+                if (diff > 0) {
+                    hours += diff / (1000 * 60 * 60)
+                }
+            }
+        })
+        return Math.round(hours * 10) / 10
+    }, [historyMissions])
 
     const prevMissionIdRef = useRef<string | null>(null)
     const prevMissionStatusRef = useRef<string | null>(null)
@@ -234,16 +318,20 @@ export default function RescuerDashboard() {
             currentStatus === 'EN_ROUTE'
         ) {
             toast.info('Đội trưởng đã tiếp nhận nhiệm vụ!', {
-                description: 'Nhiệm vụ đã chuyển sang trạng thái "Đang di chuyển", hãy chuẩn bị xuất phát.',
+                description:
+                    'Nhiệm vụ đã chuyển sang trạng thái "Đang di chuyển", hãy chuẩn bị xuất phát.',
             })
         }
 
         // Check if an active mission was aborted
         if (prevMissionIdRef.current && !currentId) {
-            const aborted = historyMissions.find(m => m.id === prevMissionIdRef.current && m.status === 'ABORTED')
+            const aborted = historyMissions.find(
+                m => m.id === prevMissionIdRef.current && m.status === 'ABORTED'
+            )
             if (aborted) {
                 toast.error('Nhiệm vụ đã bị hủy!', {
-                    description: 'Đội trưởng hoặc Điều phối viên đã hủy nhiệm vụ.',
+                    description:
+                        'Đội trưởng hoặc Điều phối viên đã hủy nhiệm vụ.',
                 })
             }
         }
@@ -404,36 +492,58 @@ export default function RescuerDashboard() {
                                             }
                                         />
                                         <AvatarFallback>
-                                            {getInitials(profile?.fullName || 'RS')}
+                                            {getInitials(
+                                                profile?.fullName || 'RS'
+                                            )}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
                                         <p className="text-sm font-bold text-slate-800 truncate">
-                                            {profile?.fullName || 'Thành viên Cứu hộ'}
+                                            {profile?.fullName ||
+                                                'Thành viên Cứu hộ'}
                                         </p>
                                         <p className="text-[11px] text-slate-500 truncate">
-                                            {profile?.teamName || 'Chưa tham gia đội'}
+                                            {profile?.teamName ||
+                                                'Chưa tham gia đội'}
                                         </p>
                                     </div>
                                 </div>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
-                                <DropdownMenuLabel>Tài khoản của bạn</DropdownMenuLabel>
+                            <DropdownMenuContent
+                                align="end"
+                                className="w-56"
+                                sideOffset={8}
+                            >
+                                <DropdownMenuLabel>
+                                    Tài khoản của bạn
+                                </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => setActiveTab('profile')} className="cursor-pointer">
+                                <DropdownMenuItem
+                                    onClick={() => setActiveTab('profile')}
+                                    className="cursor-pointer"
+                                >
                                     <Shield className="mr-2 h-4 w-4" />
                                     <span>Đội cứu hộ (Nội bộ)</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push('/profile')} className="cursor-pointer">
+                                <DropdownMenuItem
+                                    onClick={() => router.push('/profile')}
+                                    className="cursor-pointer"
+                                >
                                     <User className="mr-2 h-4 w-4" />
                                     <span>Hồ sơ cá nhân</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push('/map')} className="cursor-pointer">
+                                <DropdownMenuItem
+                                    onClick={() => router.push('/map')}
+                                    className="cursor-pointer"
+                                >
                                     <MapIcon className="mr-2 h-4 w-4" />
                                     <span>Bản đồ hệ thống</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => logout()} className="text-red-600 focus:text-red-600 cursor-pointer">
+                                <DropdownMenuItem
+                                    onClick={() => logout()}
+                                    className="text-red-600 focus:text-red-600 cursor-pointer"
+                                >
                                     <LogOut className="mr-2 h-4 w-4" />
                                     <span>Đăng xuất</span>
                                 </DropdownMenuItem>
@@ -464,12 +574,17 @@ export default function RescuerDashboard() {
                             {profile && (
                                 <div className="flex items-center gap-2 mr-2 bg-white/50 px-3 py-1.5 rounded-full border border-slate-200">
                                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest hidden sm:inline-block">
-                                        {isUserActive ? 'Trực tuyến' : 'Ngoại tuyến'}
+                                        {isUserActive
+                                            ? 'Trực tuyến'
+                                            : 'Ngoại tuyến'}
                                     </span>
                                     <Switch
                                         checked={isUserActive}
-                                        onCheckedChange={(checked) => {
-                                            toggleUserStatus({ userId: profile.id, isActive: checked })
+                                        onCheckedChange={checked => {
+                                            toggleUserStatus({
+                                                userId: profile.id,
+                                                isActive: checked,
+                                            })
                                         }}
                                         disabled={isTogglingStatus}
                                         className="data-[state=checked]:bg-emerald-500"
@@ -511,7 +626,7 @@ export default function RescuerDashboard() {
                                         <Card>
                                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                                 <CardTitle className="text-sm font-bold text-slate-500">
-                                                    Giờ hoạt động (Ước tính)
+                                                    Giờ hoạt động
                                                 </CardTitle>
                                                 <Clock
                                                     size={20}
@@ -584,13 +699,21 @@ export default function RescuerDashboard() {
 
                             {/* TAB: CURRENT MISSION */}
                             {activeTab === 'current_mission' && (
-                                <RescuerCurrentMission currentMission={currentMission} teamMembers={teamMembers} />
+                                <RescuerCurrentMission
+                                    currentMission={currentMission}
+                                    teamMembers={teamMembers}
+                                />
                             )}
 
                             {/* TAB: REQUESTS MAP */}
                             {activeTab === 'requests_map' && (
                                 <section className="h-[700px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 relative bg-slate-100">
-                                    <RescuerMapView currentMission={currentMission} teamLocation={teamDetails?.baseLocation || null} />
+                                    <RescuerMapView
+                                        currentMission={currentMission}
+                                        teamLocation={
+                                            teamDetails?.baseLocation || null
+                                        }
+                                    />
                                 </section>
                             )}
 
@@ -615,101 +738,300 @@ export default function RescuerDashboard() {
                                                 </div>
                                             ) : (
                                                 <div className="space-y-4">
-                                                    {historyMissions.map((mission: MissionSummary) => (
-                                                        <Dialog key={mission.id}>
-                                                            <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                                                                <div className="flex items-start gap-4 mb-4 md:mb-0">
-                                                                    <div className={cn('p-3 rounded-xl', mission.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600')}>
-                                                                        {mission.status === 'COMPLETED' ? <CheckCircle size={24} /> : <ShieldAlert size={24} />}
-                                                                    </div>
-                                                                    <div>
-                                                                        <h4 className="font-bold text-slate-800 text-lg">
-                                                                            {mission.request?.location?.address || `Nhiệm vụ #${mission.id.slice(-6)}`}
-                                                                        </h4>
-                                                                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                                                                            <Badge variant="outline" className="text-slate-500 font-medium">
-                                                                                {dictType[mission.request?.emergencyType || ''] || 'Khác'}
-                                                                            </Badge>
-                                                                            <Badge variant="outline" className={cn(
-                                                                                "font-medium",
-                                                                                mission.request?.priority === 'CRITICAL' || mission.request?.priority === 'HIGH' ? "text-rose-500 border-rose-200" : "text-amber-500 border-amber-200"
-                                                                            )}>
-                                                                                Mức độ: {dictPriority[mission.request?.priority || ''] || mission.request?.priority}
-                                                                            </Badge>
+                                                    {historyMissions.map(
+                                                        (
+                                                            mission: MissionSummary
+                                                        ) => (
+                                                            <Dialog
+                                                                key={mission.id}
+                                                            >
+                                                                <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                                                                    <div className="flex items-start gap-4 mb-4 md:mb-0">
+                                                                        <div
+                                                                            className={cn(
+                                                                                'p-3 rounded-xl',
+                                                                                mission.status ===
+                                                                                    'COMPLETED'
+                                                                                    ? 'bg-emerald-100 text-emerald-600'
+                                                                                    : 'bg-rose-100 text-rose-600'
+                                                                            )}
+                                                                        >
+                                                                            {mission.status ===
+                                                                            'COMPLETED' ? (
+                                                                                <CheckCircle
+                                                                                    size={
+                                                                                        24
+                                                                                    }
+                                                                                />
+                                                                            ) : (
+                                                                                <ShieldAlert
+                                                                                    size={
+                                                                                        24
+                                                                                    }
+                                                                                />
+                                                                            )}
                                                                         </div>
-                                                                        <p className="text-xs text-slate-400 mt-2 font-medium">
-                                                                            Trạng thái: <span className={mission.status === 'COMPLETED' ? "text-emerald-600" : "text-rose-600"}>{dictStatus[mission.status as keyof typeof dictStatus] || mission.status}</span>
-                                                                            {mission.endTime && ` • Hoàn thành: ${format(new Date(mission.endTime), 'HH:mm dd/MM/yyyy')}`}
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                                <DialogTrigger asChild>
-                                                                    <Button variant="outline" className="font-bold text-slate-600 self-start md:self-center">
-                                                                        Xem chi tiết
-                                                                    </Button>
-                                                                </DialogTrigger>
-                                                            </div>
-                                                            <DialogContent className="sm:max-w-[500px] rounded-2xl">
-                                                                <DialogHeader>
-                                                                    <DialogTitle className="text-xl font-black text-slate-800 flex items-center gap-2">
-                                                                        {mission.status === 'COMPLETED' ? <CheckCircle className="text-emerald-500" /> : <ShieldAlert className="text-rose-500" />}
-                                                                        Chi tiết nhiệm vụ
-                                                                    </DialogTitle>
-                                                                </DialogHeader>
-                                                                <div className="mt-4 space-y-4">
-                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mã NV</p>
-                                                                            <p className="font-bold text-slate-800 text-sm">#{mission.id.slice(-8)}</p>
-                                                                        </div>
-                                                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Trạng thái</p>
-                                                                            <p className={cn("font-bold text-sm", mission.status === 'COMPLETED' ? "text-emerald-600" : "text-rose-600")}>
-                                                                                {dictStatus[mission.status as keyof typeof dictStatus] || mission.status}
+                                                                        <div>
+                                                                            <h4 className="font-bold text-slate-800 text-lg">
+                                                                                {mission
+                                                                                    .request
+                                                                                    ?.location
+                                                                                    ?.address ||
+                                                                                    `Nhiệm vụ #${mission.id.slice(-6)}`}
+                                                                            </h4>
+                                                                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                                                <Badge
+                                                                                    variant="outline"
+                                                                                    className="text-slate-500 font-medium"
+                                                                                >
+                                                                                    {dictType[
+                                                                                        mission
+                                                                                            .request
+                                                                                            ?.emergencyType ||
+                                                                                            ''
+                                                                                    ] ||
+                                                                                        'Khác'}
+                                                                                </Badge>
+                                                                                <Badge
+                                                                                    variant="outline"
+                                                                                    className={cn(
+                                                                                        'font-medium',
+                                                                                        mission
+                                                                                            .request
+                                                                                            ?.priority ===
+                                                                                            'CRITICAL' ||
+                                                                                            mission
+                                                                                                .request
+                                                                                                ?.priority ===
+                                                                                                'HIGH'
+                                                                                            ? 'text-rose-500 border-rose-200'
+                                                                                            : 'text-amber-500 border-amber-200'
+                                                                                    )}
+                                                                                >
+                                                                                    Mức
+                                                                                    độ:{' '}
+                                                                                    {dictPriority[
+                                                                                        mission
+                                                                                            .request
+                                                                                            ?.priority ||
+                                                                                            ''
+                                                                                    ] ||
+                                                                                        mission
+                                                                                            .request
+                                                                                            ?.priority}
+                                                                                </Badge>
+                                                                            </div>
+                                                                            <p className="text-xs text-slate-400 mt-2 font-medium">
+                                                                                Trạng
+                                                                                thái:{' '}
+                                                                                <span
+                                                                                    className={
+                                                                                        mission.status ===
+                                                                                        'COMPLETED'
+                                                                                            ? 'text-emerald-600'
+                                                                                            : 'text-rose-600'
+                                                                                    }
+                                                                                >
+                                                                                    {dictStatus[
+                                                                                        mission.status as keyof typeof dictStatus
+                                                                                    ] ||
+                                                                                        mission.status}
+                                                                                </span>
+                                                                                {mission.endTime &&
+                                                                                    ` • Hoàn thành: ${format(new Date(mission.endTime), 'HH:mm dd/MM/yyyy')}`}
                                                                             </p>
                                                                         </div>
                                                                     </div>
-                                                                    <div>
-                                                                        <p className="text-sm font-bold text-slate-800 mb-1">Địa chỉ hiện trường</p>
-                                                                        <div className="flex items-start gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                                                            <MapPin size={16} className="text-rose-500 mt-0.5 shrink-0" />
-                                                                            <p className="text-sm text-slate-600">{mission.request?.location?.address || 'Không có thông tin địa chỉ'}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                        <div>
-                                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Loại sự cố</p>
-                                                                            <Badge variant="secondary" className="font-medium bg-slate-100">
-                                                                                {dictType[mission.request?.emergencyType || ''] || 'Khác'}
-                                                                            </Badge>
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mức độ</p>
-                                                                            <Badge variant="secondary" className="font-medium bg-slate-100">
-                                                                                {dictPriority[mission.request?.priority || ''] || 'Bình thường'}
-                                                                            </Badge>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mô tả sự cố</p>
-                                                                        <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 min-h-[60px]">
-                                                                            {mission.request?.description || 'Không có mô tả thêm.'}
-                                                                        </p>
-                                                                    </div>
-                                                                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                                                                        <div>
-                                                                            <p className="text-xs text-slate-500 flex items-center gap-1"><Clock size={12} /> Thời gian tạo</p>
-                                                                            <p className="text-sm font-semibold text-slate-700 mt-0.5">{mission.createdAt ? format(new Date(mission.createdAt), 'HH:mm dd/MM/yyyy') : '--'}</p>
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-xs text-slate-500 flex items-center gap-1"><CheckSquare size={12} /> Hoàn thành lúc</p>
-                                                                            <p className="text-sm font-semibold text-slate-700 mt-0.5">{mission.endTime ? format(new Date(mission.endTime), 'HH:mm dd/MM/yyyy') : '--'}</p>
-                                                                        </div>
-                                                                    </div>
+                                                                    <DialogTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            className="font-bold text-slate-600 self-start md:self-center"
+                                                                        >
+                                                                            Xem
+                                                                            chi
+                                                                            tiết
+                                                                        </Button>
+                                                                    </DialogTrigger>
                                                                 </div>
-                                                            </DialogContent>
-                                                        </Dialog>
-                                                    ))}
+                                                                <DialogContent className="sm:max-w-[500px] rounded-2xl">
+                                                                    <DialogHeader>
+                                                                        <DialogTitle className="text-xl font-black text-slate-800 flex items-center gap-2">
+                                                                            {mission.status ===
+                                                                            'COMPLETED' ? (
+                                                                                <CheckCircle className="text-emerald-500" />
+                                                                            ) : (
+                                                                                <ShieldAlert className="text-rose-500" />
+                                                                            )}
+                                                                            Chi
+                                                                            tiết
+                                                                            nhiệm
+                                                                            vụ
+                                                                        </DialogTitle>
+                                                                    </DialogHeader>
+                                                                    <div className="mt-4 space-y-4">
+                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                                                                    Mã
+                                                                                    NV
+                                                                                </p>
+                                                                                <p className="font-bold text-slate-800 text-sm">
+                                                                                    #
+                                                                                    {mission.id.slice(
+                                                                                        -8
+                                                                                    )}
+                                                                                </p>
+                                                                            </div>
+                                                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                                                                    Trạng
+                                                                                    thái
+                                                                                </p>
+                                                                                <p
+                                                                                    className={cn(
+                                                                                        'font-bold text-sm',
+                                                                                        mission.status ===
+                                                                                            'COMPLETED'
+                                                                                            ? 'text-emerald-600'
+                                                                                            : 'text-rose-600'
+                                                                                    )}
+                                                                                >
+                                                                                    {dictStatus[
+                                                                                        mission.status as keyof typeof dictStatus
+                                                                                    ] ||
+                                                                                        mission.status}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-sm font-bold text-slate-800 mb-1">
+                                                                                Địa
+                                                                                chỉ
+                                                                                hiện
+                                                                                trường
+                                                                            </p>
+                                                                            <div className="flex items-start gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                                                <MapPin
+                                                                                    size={
+                                                                                        16
+                                                                                    }
+                                                                                    className="text-rose-500 mt-0.5 shrink-0"
+                                                                                />
+                                                                                <p className="text-sm text-slate-600">
+                                                                                    {mission
+                                                                                        .request
+                                                                                        ?.location
+                                                                                        ?.address ||
+                                                                                        'Không có thông tin địa chỉ'}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                            <div>
+                                                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                                                                    Loại
+                                                                                    sự
+                                                                                    cố
+                                                                                </p>
+                                                                                <Badge
+                                                                                    variant="secondary"
+                                                                                    className="font-medium bg-slate-100"
+                                                                                >
+                                                                                    {dictType[
+                                                                                        mission
+                                                                                            .request
+                                                                                            ?.emergencyType ||
+                                                                                            ''
+                                                                                    ] ||
+                                                                                        'Khác'}
+                                                                                </Badge>
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                                                                    Mức
+                                                                                    độ
+                                                                                </p>
+                                                                                <Badge
+                                                                                    variant="secondary"
+                                                                                    className="font-medium bg-slate-100"
+                                                                                >
+                                                                                    {dictPriority[
+                                                                                        mission
+                                                                                            .request
+                                                                                            ?.priority ||
+                                                                                            ''
+                                                                                    ] ||
+                                                                                        'Bình thường'}
+                                                                                </Badge>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                                                                Mô
+                                                                                tả
+                                                                                sự
+                                                                                cố
+                                                                            </p>
+                                                                            <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 min-h-[60px]">
+                                                                                {mission
+                                                                                    .request
+                                                                                    ?.description ||
+                                                                                    'Không có mô tả thêm.'}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                                                                            <div>
+                                                                                <p className="text-xs text-slate-500 flex items-center gap-1">
+                                                                                    <Clock
+                                                                                        size={
+                                                                                            12
+                                                                                        }
+                                                                                    />{' '}
+                                                                                    Thời
+                                                                                    gian
+                                                                                    tạo
+                                                                                </p>
+                                                                                <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                                                                                    {mission.createdAt
+                                                                                        ? format(
+                                                                                              new Date(
+                                                                                                  mission.createdAt
+                                                                                              ),
+                                                                                              'HH:mm dd/MM/yyyy'
+                                                                                          )
+                                                                                        : '--'}
+                                                                                </p>
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-xs text-slate-500 flex items-center gap-1">
+                                                                                    <CheckSquare
+                                                                                        size={
+                                                                                            12
+                                                                                        }
+                                                                                    />{' '}
+                                                                                    Hoàn
+                                                                                    thành
+                                                                                    lúc
+                                                                                </p>
+                                                                                <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                                                                                    {mission.endTime
+                                                                                        ? format(
+                                                                                              new Date(
+                                                                                                  mission.endTime
+                                                                                              ),
+                                                                                              'HH:mm dd/MM/yyyy'
+                                                                                          )
+                                                                                        : '--'}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        )
+                                                    )}
                                                 </div>
                                             )}
                                         </CardContent>
@@ -719,7 +1041,12 @@ export default function RescuerDashboard() {
 
                             {/* TAB: PROFILE */}
                             {activeTab === 'profile' && (
-                                <RescuerProfile profile={profile} teamDetails={teamDetails} historyMissions={historyMissions} isUserActive={isUserActive} />
+                                <RescuerProfile
+                                    profile={profile}
+                                    teamDetails={teamDetailsWithMembers}
+                                    missions={missions}
+                                    isUserActive={isUserActive}
+                                />
                             )}
                         </div>
                     </div>
