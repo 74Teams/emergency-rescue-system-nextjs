@@ -116,9 +116,7 @@ export default function LandingPage() {
                         <div className="flex flex-col">
                             <span className="text-[17px] font-black tracking-tight leading-none text-slate-950">
                                 Rescue
-                                <span className="text-emerald-600">
-                                    System
-                                </span>
+                                <span className="text-emerald-600">System</span>
                             </span>
                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-none mt-1">
                                 Điều phối cứu hộ cứu nạn
@@ -163,17 +161,22 @@ export default function LandingPage() {
                             </Button>
                         </Link>
                         <div className="hidden md:block">
-                            <UserAccountMenu showLoginWhenGuest avatarSize="md" />
+                            <UserAccountMenu
+                                showLoginWhenGuest
+                                avatarSize="md"
+                            />
                         </div>
                         <div className="md:hidden">
                             <UserAccountMenu avatarSize="sm" />
                         </div>
-                        
+
                         {/* Mobile Menu Button */}
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             className="flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-emerald-600 md:hidden"
-                            aria-label={mobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
+                            aria-label={
+                                mobileMenuOpen ? 'Đóng menu' : 'Mở menu'
+                            }
                         >
                             {mobileMenuOpen ? (
                                 <X className="size-6" />
@@ -1167,12 +1170,13 @@ export default function LandingPage() {
                                 <LifeBuoy className="size-4 stroke-[2.5] transition-transform duration-500 group-hover:rotate-45" />
                             </div>
                             <span className="text-sm font-black text-white tracking-wider">
-                                Rescue<span className="text-emerald-500">System</span>
+                                Rescue
+                                <span className="text-emerald-500">System</span>
                             </span>
                         </div>
                         <p className="text-slate-500 text-center md:text-left">
                             © {new Date().getFullYear()} Rescue System. Đồ án
-                            tốt nghiệp đại học phi lợi nhuận.
+                            công nghệ phần mềm
                         </p>
                     </div>
 

@@ -49,9 +49,9 @@ export const apiQueryKeys = {
     },
     missions: {
         all: ['missions'] as const,
-        detail: (missionId: string) => ['missions', missionId] as const,
+        detail: (missionId: string) => ['missions', 'detail', missionId] as const,
         history: (missionId: string) =>
-            ['missions', missionId, 'history'] as const,
+            ['missions', 'detail', missionId, 'history'] as const,
     },
     checklists: {
         all: ['checklists'] as const,
