@@ -55,6 +55,7 @@ import CitizenRequestDetailDialog from '@/components/dashboards/citizen/CitizenR
 import { OsmAddressResult, RequestDetail } from '@/types/request'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { toast } from 'sonner'
+import { getStoredUser } from '@/lib/api/storage'
 
 export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
     const createRequestMutation = useCreateCitizenRequestMutation()
@@ -83,6 +84,16 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
     const [attachments, setAttachments] = useState<
         { file: File; preview: string; type: string }[]
     >([])
+    const [phoneNumber, setPhoneNumber] = useState('')
+
+    useEffect(() => {
+        if (isDialogOpen) {
+            const user = getStoredUser()
+            if (user?.phoneNumber) {
+                setPhoneNumber(user.phoneNumber)
+            }
+        }
+    }, [isDialogOpen])
 
     const resetForm = () => {
         setEmergencyType(1)
@@ -93,10 +104,16 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
         setGpsCoords(null)
         setGpsStatus('idle')
         setAttachments([])
+        setPhoneNumber('')
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (!phoneNumber.trim()) {
+            toast.error('Vui lòng nhập số điện thoại liên hệ!')
+            return
+        }
 
         if (!gpsCoords) {
             toast.error('Vui lòng lấy tọa độ GPS trước khi gửi!')
@@ -112,6 +129,7 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
             emergencyType,
             priority,
             description,
+            phoneNumber,
             address: addressInput || 'Chưa có địa chỉ',
             latitude: gpsCoords.lat,
             longitude: gpsCoords.lng,
@@ -402,6 +420,19 @@ export function AppSidebar({ requests }: { requests: RequestDetail[] }) {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+
+                            {/* === SỐ ĐIỆN THOẠI === */}
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                                    Số điện thoại liên hệ *
+                                </label>
+                                <Input
+                                    value={phoneNumber}
+                                    onChange={e => setPhoneNumber(e.target.value)}
+                                    placeholder="Nhập số điện thoại liên hệ..."
+                                    className="h-10 bg-slate-50 border-slate-200 rounded-lg text-sm"
+                                />
                             </div>
 
                             {/* === VỊ TRÍ SỰ CỐ === */}
