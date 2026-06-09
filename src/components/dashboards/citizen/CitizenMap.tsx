@@ -238,8 +238,10 @@ function getPopupHeaderConfig(status: string) {
 
 function MapSearchControl({
   onSelectLocation,
+  children,
 }: {
   onSelectLocation: (coords: [number, number], address: string) => void;
+  children?: React.ReactNode;
 }) {
   const map = useMap();
   const [query, setQuery] = useState("");
@@ -297,58 +299,64 @@ function MapSearchControl({
 
   return (
     <div
-      className="absolute top-4 left-4 z-1000 w-full max-w-[320px] md:max-w-[400px]"
+      className="absolute top-4 left-4 right-4 z-[1000] flex flex-row flex-wrap items-center gap-3 pointer-events-none"
       onMouseDown={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
     >
-      <div className="relative group">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-          ) : (
-            <Search className="w-4 h-4" />
+      <div className="relative w-full max-w-[320px] md:max-w-[400px] pointer-events-auto">
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
+          </div>
+
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Tìm kiếm địa điểm..."
+            className="w-full h-11 pl-10 pr-10 bg-white border border-slate-200 rounded-xl shadow-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-800"
+          />
+
+          {query && (
+            <button
+              onClick={() => {
+                setQuery("");
+                setOpen(false);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           )}
         </div>
 
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Tìm kiếm địa điểm..."
-          className="w-full h-11 pl-10 pr-10 bg-white border border-slate-200 rounded-xl shadow-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-800"
-        />
-
-        {query && (
-          <button
-            onClick={() => {
-              setQuery("");
-              setOpen(false);
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+        {open && results.length > 0 && (
+          <div className="absolute top-full left-0 right-0 z-[1001] mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {results.map((item, index) => (
+              <button
+                key={item.place_id || index}
+                onClick={() => handleSelect(item)}
+                className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 border-b border-slate-50 last:border-none flex flex-col gap-0.5 transition-colors cursor-pointer"
+              >
+                <span className="font-medium text-slate-900 truncate">
+                  {item.display_name.split(",")[0]}
+                </span>
+                <span className="text-xs text-slate-500 truncate">
+                  {item.display_name}
+                </span>
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
-      {open && results.length > 0 && (
-        <div className="mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-          {results.map((item, index) => (
-            <button
-              key={item.place_id || index}
-              onClick={() => handleSelect(item)}
-              className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 border-b border-slate-50 last:border-none flex flex-col gap-0.5 transition-colors cursor-pointer"
-            >
-              <span className="font-medium text-slate-900 truncate">
-                {item.display_name.split(",")[0]}
-              </span>
-              <span className="text-xs text-slate-500 truncate">
-                {item.display_name}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="pointer-events-auto flex flex-wrap items-center gap-1.5">
+        {children}
+      </div>
     </div>
   );
 }
@@ -528,7 +536,51 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
           zoomControl={false}
           style={{ height: "100%", width: "100%", zIndex: 0 }}
         >
-          <MapSearchControl onSelectLocation={handleSelectSearchResult} />
+          <MapSearchControl onSelectLocation={handleSelectSearchResult}>
+            {/* Tất cả button */}
+            <button
+              onClick={handleResetFilters}
+              className={cn(
+                "flex items-center gap-1.5 px-3 h-11 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-lg",
+                selectedFilters.length === 0
+                  ? "bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-400"
+                  : "bg-white hover:bg-slate-50 border-slate-200/80 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+              )}
+            >
+              <span className={cn("w-1.5 h-1.5 rounded-full", selectedFilters.length === 0 ? "bg-blue-500 animate-pulse" : "bg-slate-400")} />
+              Tất cả ({requests.length})
+            </button>
+
+            {/* Individual status buttons */}
+            {filterOptions.map((opt) => {
+              const isActive = selectedFilters.includes(opt.label);
+              const count = getCount(opt.statuses);
+              return (
+                <button
+                  key={opt.label}
+                  onClick={() => handleToggleFilter(opt.label)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 h-11 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-lg",
+                    isActive ? opt.activeBg : opt.inactiveBg
+                  )}
+                >
+                  <span className={cn("w-1.5 h-1.5 rounded-full", opt.color, isActive && "animate-pulse")} />
+                  {opt.label} ({count})
+                </button>
+              );
+            })}
+
+            {/* Reset button */}
+            {selectedFilters.length > 0 && (
+              <button
+                onClick={handleResetFilters}
+                className="flex items-center gap-1.5 px-3 h-11 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400 text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-lg"
+              >
+                <X className="w-3.5 h-3.5" />
+                Đặt lại
+              </button>
+            )}
+          </MapSearchControl>
 
           <TileLayer
             key={MAP_LAYERS[layerIndex].url}
@@ -613,62 +665,7 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
         </MapContainer>
       </div>
 
-      {/* Status Filter Floating Panel */}
-      <div className="absolute top-4 right-4 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-lg flex flex-col gap-2 max-w-[280px] md:max-w-[340px] animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto">
-        <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-850">
-          <div className="flex items-center gap-1.5">
-            <span className="flex h-1.5 w-1.5 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-            </span>
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Trạng thái sự cố
-            </span>
-          </div>
-          {selectedFilters.length > 0 && (
-            <button
-              onClick={handleResetFilters}
-              className="text-[9px] font-black text-blue-600 hover:text-blue-705 dark:text-blue-400 transition-colors cursor-pointer"
-            >
-              Đặt lại
-            </button>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {/* Tất cả button */}
-          <button
-            onClick={handleResetFilters}
-            className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-black transition-all active:scale-95 cursor-pointer shadow-3xs",
-              selectedFilters.length === 0
-                ? "bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-450"
-                : "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-550 dark:text-slate-400"
-            )}
-          >
-            <span className={cn("w-1.5 h-1.5 rounded-full", selectedFilters.length === 0 ? "bg-blue-500 animate-pulse" : "bg-slate-400")} />
-            Tất cả ({requests.length})
-          </button>
 
-          {/* Individual status buttons */}
-          {filterOptions.map((opt) => {
-            const isActive = selectedFilters.includes(opt.label);
-            const count = getCount(opt.statuses);
-            return (
-              <button
-                key={opt.label}
-                onClick={() => handleToggleFilter(opt.label)}
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-black transition-all active:scale-95 cursor-pointer shadow-3xs",
-                  isActive ? opt.activeBg : opt.inactiveBg
-                )}
-              >
-                <span className={cn("w-1.5 h-1.5 rounded-full", opt.color, isActive && "animate-pulse")} />
-                {opt.label} ({count})
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       <div className="absolute bottom-20 right-6 z-10 flex flex-col gap-3 items-end pointer-events-none">
         <button

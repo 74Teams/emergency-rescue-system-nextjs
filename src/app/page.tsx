@@ -855,8 +855,7 @@ export default function LandingPage() {
                                 nạn nhân đạo
                             </h2>
                             <p className="text-slate-600 text-sm md:text-base leading-relaxed">
-                                Đồ án tốt nghiệp đại học chuyên ngành Công nghệ
-                                thông tin với tên gọi{' '}
+                                Đồ án công nghệ phần mềm{' '}
                                 <strong className="text-slate-900">
                                     "Hệ thống Hỗ trợ Chỉ huy và Điều phối Cứu
                                     nạn Cứu hộ thời gian thực - Rescue System"
