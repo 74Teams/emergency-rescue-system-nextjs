@@ -16,6 +16,7 @@ import {
   UserPlus,
   X,
   ShieldCheck,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ import {
   useSystemUsers,
   useCreateRescueTeam,
 } from "@/lib/api/features/commander/commander-dashboard.queries";
+import { useCreateLocation } from "@/lib/api/features/locations/locations.queries";
 import { ProfileResponse } from "@/lib/api/types";
 import { ROLE_BADGES } from "@/types/dashboards/commander";
 
@@ -53,12 +55,18 @@ export default function CreateTeamPage() {
 
   // === DATA ===
   const { data: allUsers } = useSystemUsers();
+  const createLocationMutation = useCreateLocation();
   const createTeamMutation = useCreateRescueTeam();
 
   // === FORM STATES ===
   const [teamName, setTeamName] = useState("");
   const [description, setDescription] = useState("");
-  const [baseLocationId] = useState("FB3BE536-D174-4D0C-A2D2-0008D7B42DA6");
+  
+  // Location form states
+  const [baseAddress, setBaseAddress] = useState("");
+  const [baseLandmark, setBaseLandmark] = useState("");
+  const [latitude, setLatitude] = useState("16.0544");
+  const [longitude, setLongitude] = useState("108.2022");
 
   const [selectedLeader, setSelectedLeader] = useState<ProfileResponse | null>(
     null,
@@ -98,12 +106,28 @@ export default function CreateTeamPage() {
       return;
     }
 
+    if (!baseLandmark || !baseAddress || !latitude || !longitude) {
+      toast.error("Vui lòng nhập đầy đủ thông tin Căn cứ hoạt động!");
+      return;
+    }
+
     try {
+      // 1. Gọi API tạo vị trí mới trước
+      const newLocRes = await createLocationMutation.mutateAsync({
+        address: baseAddress.trim(),
+        landmark: baseLandmark.trim(),
+        latitude: parseFloat(latitude) || 16.0544,
+        longitude: parseFloat(longitude) || 108.2022,
+      });
+
+      const newLocationId = newLocRes.data.id;
+
+      // 2. Tạo đội cứu hộ với baseLocationId mới vừa tạo
       await createTeamMutation.mutateAsync({
         teamName,
         description,
         teamLeaderId: selectedLeader.id,
-        baseLocationId,
+        baseLocationId: newLocationId,
         memberIds: selectedMembers.map((m) => m.id), // Truyền thẳng 1 cục lên BE
       });
 
@@ -156,9 +180,9 @@ export default function CreateTeamPage() {
           <Button
             className="bg-blue-600 hover:bg-blue-700 font-bold h-11 px-8 shadow-md shadow-blue-600/20"
             onClick={handleCreateTeam}
-            disabled={createTeamMutation.isPending}
+            disabled={createTeamMutation.isPending || createLocationMutation.isPending}
           >
-            {createTeamMutation.isPending ? (
+            {createTeamMutation.isPending || createLocationMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : (
               <ShieldCheck className="w-4 h-4 mr-2" />
@@ -217,6 +241,71 @@ export default function CreateTeamPage() {
                     onChange={(e) => setDescription(e.target.value)}
                   />
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 4: Thiết lập Căn cứ hoạt động mới */}
+          <section className="space-y-6">
+            <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-3">
+              <MapPin className="text-rose-500" /> Thiết lập Căn cứ hoạt động mới <span className="text-rose-500">*</span>
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+              <div className="space-y-2 col-span-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  Tên mốc / Tên Trạm Căn cứ *
+                </label>
+                <Input
+                  className="h-12 border-slate-200 focus:ring-blue-500/20"
+                  placeholder="VD: Trạm Cứu Hộ Số 1 Đà Nẵng"
+                  value={baseLandmark}
+                  onChange={(e) => setBaseLandmark(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  Địa chỉ chi tiết *
+                </label>
+                <Input
+                  className="h-12 border-slate-200 focus:ring-blue-500/20"
+                  placeholder="VD: 123 Nguyễn Hữu Thọ, Hải Châu, Đà Nẵng"
+                  value={baseAddress}
+                  onChange={(e) => setBaseAddress(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  Vĩ độ (Latitude) *
+                </label>
+                <Input
+                  type="number"
+                  step="any"
+                  className="h-12 border-slate-200 focus:ring-blue-500/20"
+                  placeholder="16.0544"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  Kinh độ (Longitude) *
+                </label>
+                <Input
+                  type="number"
+                  step="any"
+                  className="h-12 border-slate-200 focus:ring-blue-500/20"
+                  placeholder="108.2022"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  required
+                />
               </div>
             </div>
           </section>
@@ -521,7 +610,7 @@ export default function CreateTeamPage() {
 
               {/* Footer Preview */}
               <CardFooter className="p-6 pt-0 bg-slate-50 border-t border-slate-100 mt-auto flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-                <span>Căn cứ: ID {baseLocationId.split("-")[0]}...</span>
+                <span>Căn cứ: {baseLandmark || baseAddress.split(",")[0] || "Chưa thiết lập"}</span>
               </CardFooter>
             </Card>
           </div>

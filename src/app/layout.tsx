@@ -1,10 +1,14 @@
 import { Toaster } from '@/components/ui/sonner'
 import { Providers } from '@/app/providers'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Arimo } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const arimo = Arimo({
+    subsets: ['latin', 'vietnamese'],
+    weight: ['400', '500', '600', '700'],
+    variable: '--font-sans',
+})
 
 export const metadata: Metadata = {
     title: 'Hệ Thống Cứu Hộ',
@@ -17,8 +21,8 @@ export default function RootLayout({
     children: React.ReactNode
 }>) {
     return (
-        <html lang="vi">
-            <body className={`${inter.className} bg-slate-50`}>
+        <html lang="vi" className={arimo.variable}>
+            <body className={`font-sans bg-slate-50`}>
                 <Providers>{children}</Providers>
                 <Toaster richColors position="top-right" duration={2000} />
             </body>
