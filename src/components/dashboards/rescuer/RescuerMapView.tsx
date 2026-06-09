@@ -117,7 +117,7 @@ export default function RescuerMapView({ currentMission, teamLocation }: Rescuer
 
     // Lấy thông tin nạn nhân từ Request
     const { data: requestDetails, isLoading } = useRequestDetail(currentMission?.requestId || '')
-    const reqLoc = requestDetails?.location
+    const reqLoc = currentMission?.request?.location || requestDetails?.location
 
     // Lấy đường đi thực tế bằng OSRM
     useEffect(() => {
@@ -134,7 +134,7 @@ export default function RescuerMapView({ currentMission, teamLocation }: Rescuer
                             (coord: [number, number]) => [coord[1], coord[0]] as [number, number]
                         )
                         setRouteCoords(coords)
-                        
+
                         // Distance & Duration
                         const distKm = (route.distance / 1000).toFixed(1)
                         setRouteDistance(`${distKm} km`)
@@ -150,8 +150,8 @@ export default function RescuerMapView({ currentMission, teamLocation }: Rescuer
         }
     }, [teamLocation, reqLoc])
 
-    const mapCenter: [number, number] = teamLocation 
-        ? [teamLocation.latitude, teamLocation.longitude] 
+    const mapCenter: [number, number] = teamLocation
+        ? [teamLocation.latitude, teamLocation.longitude]
         : [16.0544, 108.2022]
 
     if (isLoading && currentMission) {
@@ -172,173 +172,186 @@ export default function RescuerMapView({ currentMission, teamLocation }: Rescuer
     }
 
     return (
-        <div className="w-full h-full relative">
-            <MapContainer
-                center={mapCenter}
-                zoom={14}
-                zoomControl={false}
-                style={{ height: '100%', width: '100%', zIndex: 0 }}
-            >
-                <TileLayer
-                    key={MAP_LAYERS[layerIndex].url}
-                    attribution={MAP_LAYERS[layerIndex].attribution}
-                    url={MAP_LAYERS[layerIndex].url}
-                />
-
-                <MapController teamLoc={teamLocation} reqLoc={reqLoc} />
-
-                {/* Team Location Marker */}
-                <Marker position={[teamLocation.latitude, teamLocation.longitude]} icon={TEAM_ICON} />
-
-                {/* Request Location Marker & Path */}
-                {reqLoc && (
-                    <>
-                        <Marker position={[reqLoc.latitude, reqLoc.longitude]} icon={REQUEST_ICON} />
-                        
-                        {/* Đường dẫn đi theo đường phố thực tế */}
-                        <Polyline 
-                            positions={routeCoords.length > 0 ? routeCoords : [
-                                [teamLocation.latitude, teamLocation.longitude],
-                                [reqLoc.latitude, reqLoc.longitude]
-                            ]}
-                            color="#3b82f6"
-                            weight={6}
-                            opacity={0.8}
-                            className={routeCoords.length > 0 ? "" : "animate-pulse"}
-                            dashArray={routeCoords.length > 0 ? "none" : "10, 15"}
-                        />
-                    </>
-                )}
-            </MapContainer>
-
-            {/* Float Button Đổi Lớp Bản Đồ */}
-            <div className="absolute bottom-6 right-6 z-10">
-                <button
-                    onClick={() => setLayerIndex((prev) => (prev + 1) % MAP_LAYERS.length)}
-                    className="w-12 h-12 bg-white/90 backdrop-blur-xl rounded-full shadow-xl border border-slate-200 flex items-center justify-center text-slate-700 hover:text-orange-600 hover:scale-110 active:scale-95 transition-all duration-300"
-                >
-                    <Layers className="w-5 h-5" strokeWidth={2} />
-                </button>
-            </div>
-
-            {/* HUD (Heads Up Display) Chi Tiết Nhiệm Vụ */}
-            <div className="absolute top-6 left-6 z-10 w-[350px]">
+        <div className="w-full h-full relative flex flex-col md:flex-row bg-slate-100">
+            {/* SIDE PANEL (HUD) Chi Tiết Nhiệm Vụ */}
+            <div className="w-full md:w-[380px] bg-white border-r border-slate-200 flex flex-col h-full overflow-y-auto shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.05)] z-[1000] custom-scrollbar">
                 {!currentMission ? (
-                    <div className="bg-white/80 backdrop-blur-xl p-5 rounded-2xl shadow-xl border border-white/50 text-center">
-                        <ShieldAlert className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <div className="flex flex-col items-center justify-center text-center h-full p-8 text-slate-500">
+                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
+                            <ShieldAlert className="w-10 h-10 text-slate-300" />
+                        </div>
                         <h3 className="font-bold text-slate-800 text-lg">Đội Đang Ở Trạng Thái Standby</h3>
-                        <p className="text-sm text-slate-500 mt-1">Chưa có nhiệm vụ nào được phân công. Vị trí trên bản đồ là cứ điểm hiện tại của đội.</p>
+                        <p className="text-sm text-slate-500 mt-2 max-w-[250px]">Chưa có nhiệm vụ nào được phân công. Vị trí trên bản đồ là cứ điểm hiện tại của đội.</p>
                     </div>
                 ) : (
-                    <div className="bg-white/90 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden flex flex-col">
-                        <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-4 text-white">
+                    <div className="flex flex-col min-h-full">
+                        <div className="bg-slate-900 p-5 text-white shrink-0">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h3 className="font-black text-lg tracking-tight uppercase">
                                         Nhiệm Vụ Đang Xử Lý
                                     </h3>
-                                    <p className="text-xs text-slate-300 mt-1 font-medium flex items-center gap-1.5">
+                                    <p className="text-xs text-slate-300 mt-1.5 font-medium flex items-center gap-1.5">
                                         <MapPin size={12} />
                                         Mã Request: #{currentMission.requestId.slice(-6)}
                                     </p>
                                 </div>
-                                <div className="px-3 py-1.5 bg-orange-500 rounded-lg text-[10px] font-black tracking-widest text-white animate-pulse">
+                                <div className="px-3 py-1.5 bg-orange-500 rounded-lg text-[10px] font-black tracking-widest text-white shadow-sm shadow-orange-500/20">
                                     {dictMissionStatus[currentMission.status as keyof typeof dictMissionStatus] || currentMission.status}
                                 </div>
                             </div>
                         </div>
 
-                        {requestDetails && (
-                            <div className="p-5 space-y-4">
-                                <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Loại Sự Cố</h4>
-                                        <span className={cn(
-                                            "text-[10px] font-black px-2 py-0.5 rounded-full uppercase",
-                                            String(requestDetails.priority) === 'CRITICAL' || String(requestDetails.priority) === '1' ? 'bg-red-100 text-red-700' :
-                                            String(requestDetails.priority) === 'HIGH' || String(requestDetails.priority) === '2' ? 'bg-orange-100 text-orange-700' :
-                                            'bg-blue-100 text-blue-700'
-                                        )}>
-                                            {dictPriority[String(requestDetails.priority).toUpperCase()] || requestDetails.priority}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <AlertTriangle size={18} className="text-orange-500" />
-                                        <p className="font-bold text-slate-800 text-base">
-                                            {dictEmergencyType[String(requestDetails.emergencyType || '').toUpperCase()] || requestDetails.emergencyType}
-                                        </p>
-                                    </div>
+                        <div className="p-6 space-y-5 flex-1">
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Loại Sự Cố</h4>
+                                    <span className={cn(
+                                        "text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider",
+                                        String(requestDetails?.priority || currentMission.request?.priority) === 'CRITICAL' || String(requestDetails?.priority || currentMission.request?.priority) === '1' ? 'bg-red-100 text-red-700' :
+                                            String(requestDetails?.priority || currentMission.request?.priority) === 'HIGH' || String(requestDetails?.priority || currentMission.request?.priority) === '2' ? 'bg-orange-100 text-orange-700' :
+                                                'bg-blue-100 text-blue-700'
+                                    )}>
+                                        {dictPriority[String(requestDetails?.priority || currentMission.request?.priority).toUpperCase()] || requestDetails?.priority || currentMission.request?.priority}
+                                    </span>
                                 </div>
-
-                                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Địa chỉ hiện trường</p>
-                                    <p className="text-sm font-semibold text-slate-700 leading-snug">
-                                        {requestDetails.location?.address}
+                                <div className="flex items-center gap-2.5">
+                                    <AlertTriangle size={20} className="text-orange-500 shrink-0" />
+                                    <p className="font-black text-slate-800 text-base leading-tight">
+                                        {dictEmergencyType[String(requestDetails?.emergencyType || currentMission.request?.emergencyType || '').toUpperCase()] || requestDetails?.emergencyType || currentMission.request?.emergencyType}
                                     </p>
-                                    {requestDetails.location?.landmark && (
-                                        <p className="text-xs text-slate-500 mt-1 italic">
-                                            Ghi chú: {requestDetails.location.landmark}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {requestDetails.description && (
-                                    <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100">
-                                        <p className="text-[11px] font-bold text-orange-500 uppercase tracking-widest mb-1.5">Mô tả nhiệm vụ</p>
-                                        <p className="text-sm text-slate-700 leading-relaxed font-medium">
-                                            {requestDetails.description}
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className="flex gap-3">
-                                    <div className="flex-1">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Người Báo Cáo</p>
-                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                                            <User size={14} className="text-slate-500" />
-                                            {requestDetails.requestedBy?.fullName || 'Không rõ'}
-                                        </div>
-                                    </div>
-                                    {requestDetails.requestedBy?.phoneNumber && (
-                                        <a href={`tel:${requestDetails.requestedBy.phoneNumber}`} className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200 transition-colors cursor-pointer">
-                                            <Phone size={16} fill="currentColor" />
-                                        </a>
-                                    )}
-                                </div>
-                                
-                                {routeDistance && routeDuration && (
-                                    <div className="flex items-center justify-between bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
-                                        <div className="text-center flex-1 border-r border-blue-100/50">
-                                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-0.5">Khoảng cách</p>
-                                            <p className="font-black text-blue-700">{routeDistance}</p>
-                                        </div>
-                                        <div className="text-center flex-1">
-                                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-0.5">Thời gian tới</p>
-                                            <p className="font-black text-blue-700">{routeDuration}</p>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                <div className="pt-2">
-                                    <button 
-                                        onClick={() => {
-                                            const destination = reqLoc?.latitude && reqLoc?.longitude 
-                                                ? `${reqLoc.latitude},${reqLoc.longitude}`
-                                                : encodeURIComponent(requestDetails.location?.address || '');
-                                                
-                                            const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
-                                            window.open(url, '_blank', 'noopener,noreferrer');
-                                        }}
-                                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-3 rounded-xl transition-all flex justify-center items-center gap-2 shadow-md hover:shadow-lg active:scale-95"
-                                    >
-                                        <Navigation size={16} />
-                                        Chỉ đường Google Maps
-                                    </button>
                                 </div>
                             </div>
-                        )}
+
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Địa chỉ hiện trường</p>
+                                <p className="text-sm font-semibold text-slate-700 leading-snug">
+                                    {requestDetails?.location?.address || currentMission.request?.location?.address || 'Chưa xác định địa chỉ'}
+                                </p>
+                                {(requestDetails?.location?.landmark || (currentMission.request?.location as any)?.landmark) && (
+                                    <p className="text-xs text-slate-500 mt-2 flex items-start gap-1.5">
+                                        <Navigation size={12} className="shrink-0 mt-0.5" />
+                                        <span>Ghi chú: {requestDetails?.location?.landmark || (currentMission.request?.location as any)?.landmark}</span>
+                                    </p>
+                                )}
+                            </div>
+
+                            {(requestDetails?.description || currentMission.request?.description) && (
+                                <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100">
+                                    <p className="text-[11px] font-bold text-orange-500 uppercase tracking-widest mb-2">Mô tả nhiệm vụ</p>
+                                    <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                                        {requestDetails?.description || currentMission.request?.description}
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Người Báo Cáo</p>
+                                    <div className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-1.5">
+                                        <User size={14} className="text-slate-500 shrink-0" />
+                                        <span className="truncate">{requestDetails?.requestedBy?.fullName || currentMission.request?.requestedBy?.fullName || 'Ẩn danh'}</span>
+                                    </div>
+                                    {(requestDetails?.requestedBy?.phoneNumber || currentMission.request?.requestedBy?.phoneNumber) && (
+                                        <div className="flex items-center gap-2">
+                                            <Phone size={14} className="text-emerald-600 shrink-0" />
+                                            <span className="text-sm font-bold text-emerald-700">
+                                                {requestDetails?.requestedBy?.phoneNumber || currentMission.request?.requestedBy?.phoneNumber}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                {(requestDetails?.requestedBy?.phoneNumber || currentMission.request?.requestedBy?.phoneNumber) && (
+                                    <a href={`tel:${requestDetails?.requestedBy?.phoneNumber || currentMission.request?.requestedBy?.phoneNumber}`} className="w-12 h-12 shrink-0 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200 transition-colors cursor-pointer self-center shadow-sm">
+                                        <Phone size={18} fill="currentColor" />
+                                    </a>
+                                )}
+                            </div>
+
+                            {routeDistance && routeDuration && (
+                                <div className="flex items-center justify-between bg-blue-50/50 p-4 rounded-xl border border-blue-100/50">
+                                    <div className="text-center flex-1 border-r border-blue-100/50">
+                                        <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Khoảng cách</p>
+                                        <p className="font-black text-blue-700 text-lg">{routeDistance}</p>
+                                    </div>
+                                    <div className="text-center flex-1">
+                                        <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Thời gian tới</p>
+                                        <p className="font-black text-blue-700 text-lg">{routeDuration}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="pt-4 mt-auto">
+                                <button
+                                    onClick={() => {
+                                        const finalLoc = reqLoc || currentMission.request?.location;
+                                        const destination = finalLoc?.latitude && finalLoc?.longitude
+                                            ? `${finalLoc.latitude},${finalLoc.longitude}`
+                                            : encodeURIComponent(requestDetails?.location?.address || currentMission.request?.location?.address || '');
+
+                                        const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+                                        window.open(url, '_blank', 'noopener,noreferrer');
+                                    }}
+                                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-3.5 rounded-xl transition-all flex justify-center items-center gap-2 shadow-md hover:shadow-lg active:scale-95"
+                                >
+                                    <Navigation size={18} />
+                                    Chỉ đường Google Maps
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
+            </div>
+
+            {/* MAP SECTION */}
+            <div className="flex-1 relative h-full bg-slate-50">
+                <MapContainer
+                    center={mapCenter}
+                    zoom={14}
+                    zoomControl={false}
+                    style={{ height: '100%', width: '100%', zIndex: 0 }}
+                >
+                    <TileLayer
+                        key={MAP_LAYERS[layerIndex].url}
+                        attribution={MAP_LAYERS[layerIndex].attribution}
+                        url={MAP_LAYERS[layerIndex].url}
+                    />
+
+                    <MapController teamLoc={teamLocation} reqLoc={reqLoc} />
+
+                    {/* Team Location Marker */}
+                    <Marker position={[teamLocation.latitude, teamLocation.longitude]} icon={TEAM_ICON} />
+
+                    {/* Request Location Marker & Path */}
+                    {reqLoc && (
+                        <>
+                            <Marker position={[reqLoc.latitude, reqLoc.longitude]} icon={REQUEST_ICON} />
+
+                            {/* Đường dẫn đi theo đường phố thực tế */}
+                            <Polyline
+                                positions={routeCoords.length > 0 ? routeCoords : [
+                                    [teamLocation.latitude, teamLocation.longitude],
+                                    [reqLoc.latitude, reqLoc.longitude]
+                                ]}
+                                color="#3b82f6"
+                                weight={6}
+                                opacity={0.8}
+                                className={routeCoords.length > 0 ? "" : "animate-pulse"}
+                                dashArray={routeCoords.length > 0 ? "none" : "10, 15"}
+                            />
+                        </>
+                    )}
+                </MapContainer>
+
+                {/* Float Button Đổi Lớp Bản Đồ */}
+                <div className="absolute bottom-6 right-6 z-[1000]">
+                    <button
+                        onClick={() => setLayerIndex((prev) => (prev + 1) % MAP_LAYERS.length)}
+                        className="w-12 h-12 bg-white/90 backdrop-blur-xl rounded-full shadow-xl border border-slate-200 flex items-center justify-center text-slate-700 hover:text-orange-600 hover:scale-110 active:scale-95 transition-all duration-300"
+                    >
+                        <Layers className="w-5 h-5" strokeWidth={2} />
+                    </button>
+                </div>
             </div>
         </div>
     )
