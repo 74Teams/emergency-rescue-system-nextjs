@@ -61,6 +61,7 @@ export default function SubmitRequestPage() {
     const [landmark, setLandmark] = useState('')
     const [description, setDescription] = useState('')
     const [phoneNumber, setPhoneNumber] = useState('')
+    const [phoneError, setPhoneError] = useState('')
     const [coords, setCoords] = useState('')
     const [isLocating, setIsLocating] = useState(false)
 
@@ -177,6 +178,10 @@ export default function SubmitRequestPage() {
 
         if (!phoneNumber.trim()) {
             toast.error('Vui lòng nhập số điện thoại liên hệ.')
+            return
+        }
+        if (phoneError || !/^\d{10,11}$/.test(phoneNumber.trim())) {
+            toast.error('Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.')
             return
         }
 
@@ -454,14 +459,25 @@ export default function SubmitRequestPage() {
                                     Số điện thoại liên hệ *
                                 </label>
                                 <Input
-                                    className="bg-slate-50 border-slate-200 h-12 rounded-xl"
+                                    className={`bg-slate-50 h-12 rounded-xl ${phoneError ? 'border-red-500 focus-visible:ring-red-500' : 'border-slate-200'}`}
                                     placeholder="Ví dụ: 0906711211"
                                     type="tel"
                                     value={phoneNumber}
-                                    onChange={event =>
-                                        setPhoneNumber(event.target.value)
-                                    }
+                                    onChange={event => {
+                                        const val = event.target.value;
+                                        setPhoneNumber(val);
+                                        if (val && !/^\d+$/.test(val)) {
+                                            setPhoneError('Vui lòng chỉ nhập số');
+                                        } else if (val && (val.length < 10 || val.length > 11)) {
+                                            setPhoneError('Số điện thoại không hợp lệ (10-11 số)');
+                                        } else {
+                                            setPhoneError('');
+                                        }
+                                    }}
                                 />
+                                {phoneError && (
+                                    <p className="text-red-500 text-xs mt-1.5 font-medium">{phoneError}</p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-800 mb-2">

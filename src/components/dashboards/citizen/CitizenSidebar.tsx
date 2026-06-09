@@ -67,6 +67,7 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
+import { getStoredUser } from '@/lib/api/storage'
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
 type FilterStatus = 'ALL' | 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
@@ -237,6 +238,7 @@ function CreateRequestSheet({
     const [emergencyType, setEmergencyType] =
         useState<EmergencyCategory>('FLOOD')
     const [priority, setPriority] = useState<RequestPriority>('CRITICAL')
+    const [phoneNumber, setPhoneNumber] = useState('')
     const [address, setAddress] = useState('')
     const [landmark, setLandmark] = useState('')
     const [description, setDescription] = useState('')
@@ -245,6 +247,15 @@ function CreateRequestSheet({
     const [attachments, setAttachments] = useState<
         { file: File; preview: string; type: string }[]
     >([])
+
+    useEffect(() => {
+        if (open) {
+            const user = getStoredUser()
+            if (user?.phoneNumber) {
+                setPhoneNumber(user.phoneNumber)
+            }
+        }
+    }, [open])
 
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
@@ -286,6 +297,7 @@ function CreateRequestSheet({
     const reset = () => {
         setEmergencyType('FLOOD')
         setPriority('CRITICAL')
+        setPhoneNumber('')
         setAddress('')
         setLandmark('')
         setDescription('')
@@ -295,6 +307,10 @@ function CreateRequestSheet({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (!phoneNumber.trim()) {
+            toast.error('Vui lòng nhập số điện thoại liên hệ.')
+            return
+        }
         if (!coords.trim()) {
             toast.error('Vui lòng lấy tọa độ GPS trước khi gửi.')
             return
@@ -309,6 +325,7 @@ function CreateRequestSheet({
                 emergencyType: emergencyToApi[emergencyType],
                 priority: priorityToApi[priority],
                 description,
+                phoneNumber,
                 address: address || 'Chưa có địa chỉ',
                 latitude: lat,
                 longitude: lng,
@@ -424,6 +441,19 @@ function CreateRequestSheet({
                         </div>
 
                         <Separator />
+
+                        {/* Phone Number */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-semibold text-slate-700">
+                                Số điện thoại liên hệ *
+                            </label>
+                            <Input
+                                value={phoneNumber}
+                                onChange={e => setPhoneNumber(e.target.value)}
+                                placeholder="Nhập số điện thoại..."
+                                className="h-10 bg-slate-50 border-slate-200 rounded-lg"
+                            />
+                        </div>
 
                         {/* GPS Coordinates */}
                         <div className="flex flex-col gap-1.5">
