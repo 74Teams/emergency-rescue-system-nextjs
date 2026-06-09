@@ -207,25 +207,25 @@ export default function SubmitRequestPage() {
     }
 
     return (
-        <div className="p-4 md:p-8 h-full overflow-y-auto bg-white">
-            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-10">
-                <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                        <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+        <div className="p-3 sm:p-4 md:p-8 h-full overflow-y-auto bg-white">
+            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 md:gap-10">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                        <span className="bg-orange-500 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 rounded-full uppercase tracking-wider shadow-sm shrink-0">
                             * Cấp bách
                         </span>
                         <Link
                             href="/map"
-                            className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg"
+                            className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 hover:bg-blue-100 px-2.5 sm:px-3 py-1.5 rounded-lg shrink-0"
                         >
-                            <ArrowLeft className="w-4 h-4" />
+                            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             Quay lại bản đồ
                         </Link>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-extrabold mt-4 mb-2 text-slate-900 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mt-3 sm:mt-4 mb-1.5 sm:mb-2 text-slate-900 tracking-tight">
                         Gửi Yêu Cầu Cứu Trợ
                     </h1>
-                    <p className="text-slate-500 mb-8">
+                    <p className="text-sm sm:text-base text-slate-500 mb-5 sm:mb-8">
                         Cung cấp thông tin chính xác để đội cứu hộ tiếp cận bạn
                         nhanh nhất.
                     </p>
@@ -400,11 +400,11 @@ export default function SubmitRequestPage() {
 
                         <div>
                             <label className="block text-sm font-semibold text-slate-800 mb-2">
-                                Mô tả tình trạng hiện tại *
+                                Số điện thoại và Mô tả tình trạng *
                             </label>
                             <Textarea
                                 className="bg-slate-50 border-slate-200 min-h-[120px] rounded-xl text-md p-4"
-                                placeholder="Ví dụ: Đang bị cô lập do nước dâng cao, cần lương thực và nước uống cho 3 người..."
+                                placeholder="Ví dụ: 0906711211 - Đang bị cô lập do nước dâng cao, cần lương thực và nước uống cho 3 người..."
                                 value={description}
                                 onChange={event =>
                                     setDescription(event.target.value)
@@ -465,7 +465,7 @@ export default function SubmitRequestPage() {
                         <Button
                             type="submit"
                             disabled={createRequestMutation.isPending}
-                            className="w-full md:w-auto bg-[#003da5] hover:bg-blue-800 text-white h-14 px-8 text-lg font-bold rounded-xl shadow-lg transition-all hover:scale-[1.02]"
+                            className="w-full bg-[#003da5] hover:bg-blue-800 text-white h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-bold rounded-xl shadow-lg transition-all hover:scale-[1.02]"
                         >
                             {createRequestMutation.isPending ? (
                                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -476,65 +476,53 @@ export default function SubmitRequestPage() {
                     </form>
                 </div>
 
-                <div className="w-full lg:w-[350px] space-y-6">
-                    <div className="bg-[#f0f7ff] rounded-2xl p-6 border border-blue-100">
-                        <div className="flex items-center gap-2 text-[#003da5] font-bold mb-4 text-lg">
-                            <UploadCloud className="w-6 h-6" />
+                <div className="w-full lg:w-[350px] shrink-0 space-y-4 sm:space-y-6">
+                    <div className="bg-[#f0f7ff] rounded-2xl p-4 sm:p-6 border border-blue-100">
+                        <div className="flex items-center gap-2 text-[#003da5] font-bold mb-3 sm:mb-4 text-base sm:text-lg">
+                            <UploadCloud className="w-5 h-5 sm:w-6 sm:h-6" />
+                            <span>Lưu ý quan trọng</span>
                         </div>
-                        <ul className="space-y-4 text-sm text-blue-900">
+                        <ul className="space-y-3 sm:space-y-4 text-sm text-blue-900">
                             <li className="flex gap-3">
-                                <span className="bg-blue-200 text-[#003da5] font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0">
+                                <span className="bg-blue-200 text-[#003da5] font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-sm">
                                     1
                                 </span>
                                 Giữ điện thoại luôn bật và đảm bảo có sóng.
                             </li>
                             <li className="flex gap-3">
-                                <span className="bg-blue-200 text-[#003da5] font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0">
+                                <span className="bg-blue-200 text-[#003da5] font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-sm">
                                     2
                                 </span>
                                 Nếu có thể, hãy di chuyển lên vị trí cao hơn.
                             </li>
                             <li className="flex gap-3">
-                                <span className="bg-blue-200 text-[#003da5] font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0">
+                                <span className="bg-blue-200 text-[#003da5] font-bold rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-sm">
                                     3
                                 </span>
-                                Sử dụng đèn pin hoặc vải màu sáng để làm tín
-                                hiệu.
+                                Sử dụng đèn pin hoặc vải màu sáng để làm tín hiệu.
                             </li>
                         </ul>
                     </div>
-                    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                        <h3 className="font-bold text-slate-800 mb-4 flex items-center justify-between text-lg">
+                    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm">
+                        <h3 className="font-bold text-slate-800 mb-3 sm:mb-4 flex items-center justify-between text-base sm:text-lg">
                             Đường dây nóng
                             <span className="relative flex h-3 w-3">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                             </span>
                         </h3>
-                        <div className="space-y-3 text-base">
-                            <div className="flex justify-between border-b border-slate-50 pb-2">
-                                <span className="text-slate-500 font-medium">
-                                    Cứu hỏa
-                                </span>
-                                <span className="font-bold text-red-600">
-                                    114
-                                </span>
+                        <div className="space-y-3 text-sm sm:text-base">
+                            <div className="flex justify-between border-b border-slate-100 pb-2">
+                                <span className="text-slate-500 font-medium">Cứu hỏa</span>
+                                <span className="font-bold text-red-600">114</span>
                             </div>
-                            <div className="flex justify-between border-b border-slate-50 pb-2">
-                                <span className="text-slate-500 font-medium">
-                                    Cấp cứu
-                                </span>
-                                <span className="font-bold text-red-600">
-                                    115
-                                </span>
+                            <div className="flex justify-between border-b border-slate-100 pb-2">
+                                <span className="text-slate-500 font-medium">Cấp cứu</span>
+                                <span className="font-bold text-red-600">115</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500 font-medium">
-                                    Cứu hộ địa phương
-                                </span>
-                                <span className="font-bold text-[#003da5]">
-                                    024 123 456
-                                </span>
+                                <span className="text-slate-500 font-medium">Cứu hộ địa phương</span>
+                                <span className="font-bold text-[#003da5]">024 123 456</span>
                             </div>
                         </div>
                     </div>

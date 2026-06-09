@@ -17,6 +17,7 @@ import {
     ListTodo,
     LogOut,
     Settings,
+    CalendarCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -367,10 +368,11 @@ export default function RescuerDashboard() {
                             </div>
                             <div>
                                 <h1 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
-                                    Rescuer Team
+                                    Rescuer
+
                                 </h1>
                                 <p className="text-[11px] font-bold text-orange-600 uppercase tracking-widest">
-                                    Lực lượng cứu hộ
+                                    Cứu hộ viên
                                 </p>
                             </div>
                         </div>
@@ -477,6 +479,22 @@ export default function RescuerDashboard() {
                                     <span>Hồ sơ & Đội cứu hộ</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
+
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    isActive={activeTab === 'leave_history'}
+                                    onClick={() => setActiveTab('leave_history')}
+                                    className={cn(
+                                        'py-5 rounded-xl font-bold transition-all duration-200',
+                                        activeTab === 'leave_history'
+                                            ? 'bg-orange-50 text-orange-700 shadow-sm border border-orange-100'
+                                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                    )}
+                                >
+                                    <CalendarCheck size={18} className="mr-3" />
+                                    <span>Lịch sử xin nghỉ</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarContent>
 
@@ -567,6 +585,8 @@ export default function RescuerDashboard() {
                                     'Lịch sử nhiệm vụ đội'}
                                 {activeTab === 'profile' &&
                                     'Thông tin đội & cá nhân'}
+                                {activeTab === 'leave_history' &&
+                                    'Lịch sử xin nghỉ phép'}
                             </h2>
                         </div>
                         <div className="flex items-center gap-3">
@@ -705,9 +725,71 @@ export default function RescuerDashboard() {
                                 />
                             )}
 
+                            {/* TAB: LEAVE HISTORY */}
+                            {activeTab === 'leave_history' && (
+                                <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Lịch sử xin nghỉ phép</CardTitle>
+                                            <CardDescription>
+                                                Danh sách các đơn xin nghỉ phép của bạn
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {(!leaveRequests || leaveRequests.length === 0) ? (
+                                                <div className="text-center py-10 text-slate-500">
+                                                    Bạn chưa có đơn xin nghỉ phép nào.
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {leaveRequests.map((req: any) => (
+                                                        <div key={req.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                                                            <div className="flex items-start gap-4 mb-4 md:mb-0">
+                                                                <div className={cn(
+                                                                    'p-3 rounded-xl',
+                                                                    req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-600' :
+                                                                        req.status === 'REJECTED' ? 'bg-rose-100 text-rose-600' :
+                                                                            'bg-amber-100 text-amber-600'
+                                                                )}>
+                                                                    {req.status === 'APPROVED' ? <CheckCircle size={24} /> :
+                                                                        req.status === 'REJECTED' ? <ShieldAlert size={24} /> :
+                                                                            <Clock size={24} />}
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="font-bold text-slate-800 text-lg">
+                                                                        Nghỉ từ {format(new Date(req.startTime), 'dd/MM/yyyy')} đến {format(new Date(req.endTime), 'dd/MM/yyyy')}
+                                                                    </h4>
+                                                                    <div className="mt-1 flex flex-col gap-1">
+                                                                        <span className="text-sm text-slate-600">Lý do: {req.reason}</span>
+                                                                        {req.note && <span className="text-xs text-slate-500 italic">Ghi chú: {req.note}</span>}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex-shrink-0 text-right">
+                                                                <Badge className={cn(
+                                                                    'px-3 py-1 font-bold border-none shadow-sm text-xs',
+                                                                    req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                                                                        req.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' :
+                                                                            'bg-amber-100 text-amber-700'
+                                                                )}>
+                                                                    {req.status === 'APPROVED' ? 'Đã duyệt' : req.status === 'REJECTED' ? 'Từ chối' : 'Chờ duyệt'}
+                                                                </Badge>
+                                                                <div className="text-[10px] text-slate-400 mt-2 font-medium">
+                                                                    Gửi lúc: {format(new Date(req.createdAt), 'HH:mm dd/MM/yyyy')}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </section>
+                            )}
+
                             {/* TAB: REQUESTS MAP */}
                             {activeTab === 'requests_map' && (
-                                <section className="h-[700px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 relative bg-slate-100">
+                                <section className="h-[calc(100vh-160px)] min-h-[600px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 relative bg-slate-100">
                                     <RescuerMapView
                                         currentMission={currentMission}
                                         teamLocation={
@@ -757,7 +839,7 @@ export default function RescuerDashboard() {
                                                                             )}
                                                                         >
                                                                             {mission.status ===
-                                                                            'COMPLETED' ? (
+                                                                                'COMPLETED' ? (
                                                                                 <CheckCircle
                                                                                     size={
                                                                                         24
@@ -788,7 +870,7 @@ export default function RescuerDashboard() {
                                                                                         mission
                                                                                             .request
                                                                                             ?.emergencyType ||
-                                                                                            ''
+                                                                                        ''
                                                                                     ] ||
                                                                                         'Khác'}
                                                                                 </Badge>
@@ -803,7 +885,7 @@ export default function RescuerDashboard() {
                                                                                             mission
                                                                                                 .request
                                                                                                 ?.priority ===
-                                                                                                'HIGH'
+                                                                                            'HIGH'
                                                                                             ? 'text-rose-500 border-rose-200'
                                                                                             : 'text-amber-500 border-amber-200'
                                                                                     )}
@@ -814,7 +896,7 @@ export default function RescuerDashboard() {
                                                                                         mission
                                                                                             .request
                                                                                             ?.priority ||
-                                                                                            ''
+                                                                                        ''
                                                                                     ] ||
                                                                                         mission
                                                                                             .request
@@ -827,7 +909,7 @@ export default function RescuerDashboard() {
                                                                                 <span
                                                                                     className={
                                                                                         mission.status ===
-                                                                                        'COMPLETED'
+                                                                                            'COMPLETED'
                                                                                             ? 'text-emerald-600'
                                                                                             : 'text-rose-600'
                                                                                     }
@@ -859,7 +941,7 @@ export default function RescuerDashboard() {
                                                                     <DialogHeader>
                                                                         <DialogTitle className="text-xl font-black text-slate-800 flex items-center gap-2">
                                                                             {mission.status ===
-                                                                            'COMPLETED' ? (
+                                                                                'COMPLETED' ? (
                                                                                 <CheckCircle className="text-emerald-500" />
                                                                             ) : (
                                                                                 <ShieldAlert className="text-rose-500" />
@@ -943,7 +1025,7 @@ export default function RescuerDashboard() {
                                                                                         mission
                                                                                             .request
                                                                                             ?.emergencyType ||
-                                                                                            ''
+                                                                                        ''
                                                                                     ] ||
                                                                                         'Khác'}
                                                                                 </Badge>
@@ -961,7 +1043,7 @@ export default function RescuerDashboard() {
                                                                                         mission
                                                                                             .request
                                                                                             ?.priority ||
-                                                                                            ''
+                                                                                        ''
                                                                                     ] ||
                                                                                         'Bình thường'}
                                                                                 </Badge>
@@ -996,11 +1078,11 @@ export default function RescuerDashboard() {
                                                                                 <p className="text-sm font-semibold text-slate-700 mt-0.5">
                                                                                     {mission.createdAt
                                                                                         ? format(
-                                                                                              new Date(
-                                                                                                  mission.createdAt
-                                                                                              ),
-                                                                                              'HH:mm dd/MM/yyyy'
-                                                                                          )
+                                                                                            new Date(
+                                                                                                mission.createdAt
+                                                                                            ),
+                                                                                            'HH:mm dd/MM/yyyy'
+                                                                                        )
                                                                                         : '--'}
                                                                                 </p>
                                                                             </div>
@@ -1018,11 +1100,11 @@ export default function RescuerDashboard() {
                                                                                 <p className="text-sm font-semibold text-slate-700 mt-0.5">
                                                                                     {mission.endTime
                                                                                         ? format(
-                                                                                              new Date(
-                                                                                                  mission.endTime
-                                                                                              ),
-                                                                                              'HH:mm dd/MM/yyyy'
-                                                                                          )
+                                                                                            new Date(
+                                                                                                mission.endTime
+                                                                                            ),
+                                                                                            'HH:mm dd/MM/yyyy'
+                                                                                        )
                                                                                         : '--'}
                                                                                 </p>
                                                                             </div>

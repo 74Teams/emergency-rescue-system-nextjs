@@ -87,7 +87,7 @@ function getStatusColor(status: string) {
 function getEmergencyIconSvg(type: string, colorClass: string = "text-slate-600") {
   const isFire = type === "FIRE";
   const baseClasses = `w-3.5 h-3.5 ${colorClass}`;
-  
+
   if (isFire) {
     return `
       <svg class="${baseClasses}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
@@ -299,11 +299,12 @@ function MapSearchControl({
 
   return (
     <div
-      className="absolute top-4 left-4 right-4 z-[1000] flex flex-row flex-wrap items-center gap-3 pointer-events-none"
+      className="absolute top-3 left-3 right-3 md:top-4 md:left-4 md:right-4 z-[1000] flex flex-col gap-2 pointer-events-none"
       onMouseDown={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
     >
-      <div className="relative w-full max-w-[320px] md:max-w-[400px] pointer-events-auto">
+      {/* Search bar row */}
+      <div className="relative w-full max-w-[280px] sm:max-w-[340px] md:max-w-[420px] pointer-events-auto">
         <div className="relative group">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
             {loading ? (
@@ -318,7 +319,7 @@ function MapSearchControl({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Tìm kiếm địa điểm..."
-            className="w-full h-11 pl-10 pr-10 bg-white border border-slate-200 rounded-xl shadow-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-800"
+            className="w-full h-10 md:h-11 pl-10 pr-10 bg-white border border-slate-200 rounded-xl shadow-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-slate-800"
           />
 
           {query && (
@@ -354,7 +355,8 @@ function MapSearchControl({
         )}
       </div>
 
-      <div className="pointer-events-auto flex flex-wrap items-center gap-1.5">
+      {/* Filter buttons row — wraps on mobile */}
+      <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 w-full min-w-0">
         {children}
       </div>
     </div>
@@ -370,6 +372,7 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
   const [popupContent, setPopupContent] = useState("Vị trí cứu hộ");
 
   const mapRef = useRef<LeafletMap | null>(null);
+  const markerRefs = useRef<{ [key: string]: any }>({});
 
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
 
@@ -377,37 +380,37 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
     {
       label: "Chờ xử lý",
       statuses: ["PENDING"],
-      color: "bg-amber-500",
-      activeBg: "bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400",
-      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+      dotColor: "bg-amber-500",
+      activeBg: "bg-amber-500 border-amber-500 text-white shadow-amber-200",
+      inactiveBg: "bg-white hover:bg-amber-50 border-slate-200/80 text-slate-600 hover:border-amber-300"
     },
     {
-      label: "Đã tiếp nhận",
+      label: "Đang được tiếp nhận",
       statuses: ["ACCEPTED"],
-      color: "bg-orange-500",
-      activeBg: "bg-orange-500/10 border-orange-500 text-orange-650 dark:text-orange-400",
-      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+      dotColor: "bg-orange-500",
+      activeBg: "bg-orange-500 border-orange-500 text-white shadow-orange-200",
+      inactiveBg: "bg-white hover:bg-orange-50 border-slate-200/80 text-slate-600 hover:border-orange-300"
     },
     {
       label: "Đang xử lý",
       statuses: ["IN_PROGRESS"],
-      color: "bg-blue-650",
-      activeBg: "bg-blue-650/10 border-blue-650 text-blue-650 dark:text-blue-400",
-      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+      dotColor: "bg-blue-600",
+      activeBg: "bg-blue-600 border-blue-600 text-white shadow-blue-200",
+      inactiveBg: "bg-white hover:bg-blue-50 border-slate-200/80 text-slate-600 hover:border-blue-300"
     },
     {
       label: "Đã giải quyết",
       statuses: ["COMPLETED", "RESOLVED", "CLOSED"],
-      color: "bg-emerald-500",
-      activeBg: "bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400",
-      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+      dotColor: "bg-emerald-500",
+      activeBg: "bg-emerald-500 border-emerald-500 text-white shadow-emerald-200",
+      inactiveBg: "bg-white hover:bg-emerald-50 border-slate-200/80 text-slate-600 hover:border-emerald-300"
     },
     {
       label: "Đã hủy",
       statuses: ["CANCELED", "REJECTED", "ABORTED"],
-      color: "bg-slate-500",
-      activeBg: "bg-slate-500/10 border-slate-500 text-slate-600 dark:text-slate-400",
-      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/60 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+      dotColor: "bg-slate-500",
+      activeBg: "bg-slate-600 border-slate-600 text-white shadow-slate-200",
+      inactiveBg: "bg-white hover:bg-slate-50 border-slate-200/80 text-slate-600 hover:border-slate-400"
     }
   ];
 
@@ -436,10 +439,21 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
   useEffect(() => {
     const handleMoveMap = (e: Event) => {
       const customEvent = e as CustomEvent;
-      const { lat, lng } = customEvent.detail;
+      const { lat, lng, requestId } = customEvent.detail;
+      const numLat = Number(lat);
+      const numLng = Number(lng);
 
-      if (mapRef.current) {
-        mapRef.current.flyTo([lat, lng], 17, { animate: true, duration: 2 });
+      if (mapRef.current && !isNaN(numLat) && !isNaN(numLng)) {
+        mapRef.current.flyTo([numLat, numLng], 17, { animate: true, duration: 1.5 });
+      }
+
+      if (requestId) {
+        setTimeout(() => {
+          const marker = markerRefs.current[requestId];
+          if (marker) {
+            marker.openPopup();
+          }
+        }, 100);
       }
     };
 
@@ -541,13 +555,16 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
             <button
               onClick={handleResetFilters}
               className={cn(
-                "flex items-center gap-1.5 px-3 h-11 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-lg",
+                "flex items-center gap-1.5 px-2.5 md:px-3 h-8 md:h-9 rounded-lg border text-[11px] font-semibold transition-all active:scale-95 cursor-pointer shadow-md whitespace-nowrap",
                 selectedFilters.length === 0
-                  ? "bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-400"
-                  : "bg-white hover:bg-slate-50 border-slate-200/80 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                  ? "bg-blue-600 border-blue-600 text-white shadow-blue-200"
+                  : "bg-white hover:bg-slate-50 border-slate-200/80 text-slate-600 hover:border-blue-300"
               )}
             >
-              <span className={cn("w-1.5 h-1.5 rounded-full", selectedFilters.length === 0 ? "bg-blue-500 animate-pulse" : "bg-slate-400")} />
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full shrink-0",
+                selectedFilters.length === 0 ? "bg-white animate-pulse" : "bg-slate-400"
+              )} />
               Tất cả ({requests.length})
             </button>
 
@@ -560,11 +577,14 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
                   key={opt.label}
                   onClick={() => handleToggleFilter(opt.label)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 h-11 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-lg",
+                    "flex items-center gap-1.5 px-2.5 md:px-3 h-8 md:h-9 rounded-lg border text-[11px] font-semibold transition-all active:scale-95 cursor-pointer shadow-md whitespace-nowrap",
                     isActive ? opt.activeBg : opt.inactiveBg
                   )}
                 >
-                  <span className={cn("w-1.5 h-1.5 rounded-full", opt.color, isActive && "animate-pulse")} />
+                  <span className={cn(
+                    "w-1.5 h-1.5 rounded-full shrink-0",
+                    isActive ? "bg-white animate-pulse" : opt.dotColor
+                  )} />
                   {opt.label} ({count})
                 </button>
               );
@@ -574,9 +594,9 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
             {selectedFilters.length > 0 && (
               <button
                 onClick={handleResetFilters}
-                className="flex items-center gap-1.5 px-3 h-11 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400 text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-lg"
+                className="flex items-center gap-1 px-2.5 md:px-3 h-8 md:h-9 rounded-lg border border-rose-300 bg-rose-500 text-white hover:bg-rose-600 text-[11px] font-semibold transition-all active:scale-95 cursor-pointer shadow-md whitespace-nowrap"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
                 Đặt lại
               </button>
             )}
@@ -599,8 +619,11 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
                     request.location?.longitude || 108.2022,
                   ]}
                   icon={createRequestIcon(request)}
+                  ref={(r) => {
+                    markerRefs.current[request.id] = r;
+                  }}
                 >
-                  <Popup className="shadcn-popup">
+                  <Popup className="shadcn-popup" autoPan={false}>
                     <div className="flex flex-col w-[200px] bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
                       <div className={cn("px-3 py-2 border-b flex items-center justify-between", cfg.headerBg)}>
                         <div className="flex items-center gap-1.5">
@@ -630,9 +653,9 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
                             {" · "}
                             {request.location?.address
                               ? request.location.address
-                                  .split(",")
-                                  .slice(0, 2)
-                                  .join(",")
+                                .split(",")
+                                .slice(0, 2)
+                                .join(",")
                               : "Đang cập nhật vị trí"}
                           </p>
                         </div>
@@ -667,12 +690,12 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
 
 
 
-      <div className="absolute bottom-20 right-6 z-10 flex flex-col gap-3 items-end pointer-events-none">
+      <div className="absolute bottom-6 md:bottom-20 right-3 md:right-6 z-10 flex flex-col gap-2 md:gap-3 items-end pointer-events-none">
         <button
           onClick={handleSwitchLayer}
           className={cn(`group relative pointer-events-auto`, btnClass)}
         >
-          <Layers className="w-5 h-5" strokeWidth={2.5} />
+          <Layers className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
           <span className={tooltipClass}>{MAP_LAYERS[layerIndex].name}</span>
         </button>
 
@@ -682,27 +705,27 @@ export default function Map({ requests }: { requests: RequestDetail[] }) {
           className={`group relative ${btnClass} ${isLocating ? "opacity-70" : ""} pointer-events-auto`}
         >
           {isLocating ? (
-            <Loader2 className="w-5 h-5 animate-spin" strokeWidth={2.5} />
+            <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" strokeWidth={2.5} />
           ) : (
-            <LocateFixed className="w-5 h-5" strokeWidth={2.5} />
+            <LocateFixed className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
           )}
           <span className={tooltipClass}>Định vị GPS</span>
         </button>
 
-        <div className="flex flex-col bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden w-10 pointer-events-auto">
+        <div className="flex flex-col bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden w-9 md:w-10 pointer-events-auto">
           <button
             onClick={handleZoomIn}
-            className="group relative w-full h-10 flex items-center justify-center text-[#20448c] hover:bg-blue-50 hover:text-blue-700 active:bg-blue-100 transition-colors border-b border-slate-100 cursor-pointer"
+            className="group relative w-full h-9 md:h-10 flex items-center justify-center text-[#20448c] hover:bg-blue-50 hover:text-blue-700 active:bg-blue-100 transition-colors border-b border-slate-100 cursor-pointer"
           >
-            <Plus className="w-5 h-5" strokeWidth={3} />
+            <Plus className="w-4 h-4 md:w-5 md:h-5" strokeWidth={3} />
             <span className={`${tooltipClass} z-50`}>Phóng to</span>
           </button>
 
           <button
             onClick={handleZoomOut}
-            className="group relative w-full h-10 flex items-center justify-center text-[#20448c] hover:bg-blue-50 hover:text-blue-700 active:bg-blue-100 transition-colors cursor-pointer"
+            className="group relative w-full h-9 md:h-10 flex items-center justify-center text-[#20448c] hover:bg-blue-50 hover:text-blue-700 active:bg-blue-100 transition-colors cursor-pointer"
           >
-            <Minus className="w-5 h-5" strokeWidth={3} />
+            <Minus className="w-4 h-4 md:w-5 md:h-5" strokeWidth={3} />
             <span className={`${tooltipClass} z-50`}>Thu nhỏ</span>
           </button>
         </div>

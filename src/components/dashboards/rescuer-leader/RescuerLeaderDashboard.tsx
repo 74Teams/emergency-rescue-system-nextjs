@@ -784,10 +784,10 @@ export default function RescuerLeaderDashboard() {
                             </div>
                             <div>
                                 <h1 className="text-base font-black text-slate-900 tracking-tight leading-tight">
-                                    Chỉ huy Đội
+                                    Rescuer Leader
                                 </h1>
                                 <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">
-                                    Rescuer Leader
+                                    Chỉ huy Đội
                                 </p>
                             </div>
                         </div>
@@ -1505,159 +1505,159 @@ export default function RescuerLeaderDashboard() {
                                                             Hủy bỏ nhiệm vụ
                                                         </Button>
                                                     </div>
-</div>
+                                                </div>
 
-                                                 {/* Checklist Management Card */}
-                                                 <Card className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-                                                     <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                                         <div>
-                                                             <h3 className="font-extrabold text-slate-900 flex items-center gap-2 text-base">
-                                                                 <ListTodo className="w-5 h-5 text-red-500" />
-                                                                 Checklist công việc chi tiết
-                                                             </h3>
-                                                             <p className="text-[11px] text-slate-500 mt-1">Lập danh sách công việc cứu hộ chi tiết cho đội</p>
-                                                         </div>
-                                                     </div>
+                                                {/* Checklist Management Card */}
+                                                <Card className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                                                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                                        <div>
+                                                            <h3 className="font-extrabold text-slate-900 flex items-center gap-2 text-base">
+                                                                <ListTodo className="w-5 h-5 text-red-500" />
+                                                                Checklist công việc chi tiết
+                                                            </h3>
+                                                            <p className="text-[11px] text-slate-500 mt-1">Lập danh sách công việc cứu hộ chi tiết cho đội</p>
+                                                        </div>
+                                                    </div>
 
-                                                     {/* Create checklist form */}
-                                                     <form onSubmit={handleCreateChecklist} className="flex gap-2">
-                                                         <input
-                                                             type="text"
-                                                             value={newChecklistTitle}
-                                                             onChange={e => setNewChecklistTitle(e.target.value)}
-                                                             placeholder="Nhập tên checklist mới (VD: Sơ tán tầng 3)..."
-                                                             className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:border-red-500 focus:outline-none"
-                                                             disabled={createChecklist.isPending}
-                                                         />
-                                                         <Button
-                                                             type="submit"
-                                                             className="bg-red-700 hover:bg-red-800 text-white font-bold h-9 text-xs rounded-xl"
-                                                             disabled={createChecklist.isPending}
-                                                         >
-                                                             {createChecklist.isPending ? (
-                                                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                                             ) : (
-                                                                 <Plus className="w-4 h-4 mr-1" />
-                                                             )}
-                                                             Tạo
-                                                         </Button>
-                                                     </form>
+                                                    {/* Create checklist form */}
+                                                    <form onSubmit={handleCreateChecklist} className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={newChecklistTitle}
+                                                            onChange={e => setNewChecklistTitle(e.target.value)}
+                                                            placeholder="Nhập tên checklist mới (VD: Sơ tán tầng 3)..."
+                                                            className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:border-red-500 focus:outline-none"
+                                                            disabled={createChecklist.isPending}
+                                                        />
+                                                        <Button
+                                                            type="submit"
+                                                            className="bg-red-700 hover:bg-red-800 text-white font-bold h-9 text-xs rounded-xl"
+                                                            disabled={createChecklist.isPending}
+                                                        >
+                                                            {createChecklist.isPending ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                            ) : (
+                                                                <Plus className="w-4 h-4 mr-1" />
+                                                            )}
+                                                            Tạo
+                                                        </Button>
+                                                    </form>
 
-                                                     {/* List of checklists */}
-                                                     {isLoadingMissionDetail ? (
-                                                         <div className="flex items-center justify-center py-6 text-slate-400 text-sm">
-                                                             <Loader2 className="w-5 h-5 animate-spin mr-2" /> Đang tải checklist...
-                                                         </div>
-                                                     ) : !missionDetail?.checklists || missionDetail.checklists.length === 0 ? (
-                                                         <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-xs">
-                                                             Nhiệm vụ này chưa có checklist chi tiết. Hãy tạo checklist ở trên.
-                                                         </div>
-                                                     ) : (
-                                                         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                                                             {missionDetail.checklists.map((checklist) => {
-                                                                 const items = checklist.items || []
-                                                                 const doneItems = items.filter((i) => i.isCheck).length
-                                                                 const pct = items.length > 0 ? Math.round((doneItems / items.length) * 100) : 0
+                                                    {/* List of checklists */}
+                                                    {isLoadingMissionDetail ? (
+                                                        <div className="flex items-center justify-center py-6 text-slate-400 text-sm">
+                                                            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Đang tải checklist...
+                                                        </div>
+                                                    ) : !missionDetail?.checklists || missionDetail.checklists.length === 0 ? (
+                                                        <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-xs">
+                                                            Nhiệm vụ này chưa có checklist chi tiết. Hãy tạo checklist ở trên.
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                                                            {missionDetail.checklists.map((checklist) => {
+                                                                const items = checklist.items || []
+                                                                const doneItems = items.filter((i) => i.isCheck).length
+                                                                const pct = items.length > 0 ? Math.round((doneItems / items.length) * 100) : 0
 
-                                                                 return (
-                                                                     <div key={checklist.id} className="border border-slate-200/80 rounded-xl p-4 bg-white/40 space-y-3">
-                                                                         <div className="flex items-center justify-between">
-                                                                             <div>
-                                                                                 <h4 className="font-extrabold text-slate-800 text-sm">{checklist.title}</h4>
-                                                                                 <span className="text-[10px] font-bold text-slate-500">Tiến độ: {doneItems}/{items.length} ({pct}%)</span>
-                                                                             </div>
-                                                                             <Button
-                                                                                 variant="ghost"
-                                                                                 size="sm"
-                                                                                 onClick={() => handleDeleteChecklist(checklist.id)}
-                                                                                 className="text-slate-400 hover:text-rose-500 h-8 w-8 p-0"
-                                                                                 disabled={deleteChecklist.isPending}
-                                                                             >
-                                                                                 <Trash2 className="w-4 h-4" />
-                                                                             </Button>
-                                                                         </div>
+                                                                return (
+                                                                    <div key={checklist.id} className="border border-slate-200/80 rounded-xl p-4 bg-white/40 space-y-3">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div>
+                                                                                <h4 className="font-extrabold text-slate-800 text-sm">{checklist.title}</h4>
+                                                                                <span className="text-[10px] font-bold text-slate-500">Tiến độ: {doneItems}/{items.length} ({pct}%)</span>
+                                                                            </div>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                onClick={() => handleDeleteChecklist(checklist.id)}
+                                                                                className="text-slate-400 hover:text-rose-500 h-8 w-8 p-0"
+                                                                                disabled={deleteChecklist.isPending}
+                                                                            >
+                                                                                <Trash2 className="w-4 h-4" />
+                                                                            </Button>
+                                                                        </div>
 
-                                                                         {/* Progress bar */}
-                                                                         <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                                                             <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${pct}%` }} />
-                                                                         </div>
+                                                                        {/* Progress bar */}
+                                                                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                                                            <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${pct}%` }} />
+                                                                        </div>
 
-                                                                         {/* Items */}
-                                                                         {items.length > 0 && (
-                                                                             <div className="space-y-2 pt-1">
-                                                                                 {items.map((item) => {
-                                                                                     const itemPending = updateChecklistItem.isPending && updateChecklistItem.variables?.itemId === item.id
-                                                                                     return (
-                                                                                         <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-white/70 border border-slate-100 hover:border-slate-200">
-                                                                                             <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                                                                 <button
-                                                                                                     type="button"
-                                                                                                     onClick={() => handleToggleItemCheck(item.id, item.description, item.isCheck)}
-                                                                                                     disabled={itemPending}
-                                                                                                     className="text-slate-400 hover:text-slate-600 shrink-0"
-                                                                                                 >
-                                                                                                     {itemPending ? (
-                                                                                                         <Loader2 className="w-4 h-4 animate-spin text-orange-500" />
-                                                                                                     ) : item.isCheck ? (
-                                                                                                         <CheckSquare className="w-4.5 h-4.5 text-emerald-500 fill-emerald-50" />
-                                                                                                     ) : (
-                                                                                                         <Square className="w-4.5 h-4.5 text-slate-300" />
-                                                                                                     )}
-                                                                                                 </button>
-                                                                                                 <span className={cn(
-                                                                                                     "text-xs font-semibold truncate",
-                                                                                                     item.isCheck ? "text-slate-400 line-through" : "text-slate-700"
-                                                                                                 )}>
-                                                                                                     {item.description}
-                                                                                                 </span>
-                                                                                             </div>
-                                                                                             <Button
-                                                                                                 variant="ghost"
-                                                                                                 size="sm"
-                                                                                                 onClick={() => handleDeleteItem(item.id)}
-                                                                                                 className="text-slate-400 hover:text-rose-500 h-7 w-7 p-0 shrink-0"
-                                                                                                 disabled={deleteChecklistItem.isPending}
-                                                                                             >
-                                                                                                 <Trash2 className="w-3.5 h-3.5" />
-                                                                                             </Button>
-                                                                                         </div>
-                                                                                     )
-                                                                                 })}
-                                                                             </div>
-                                                                         )}
+                                                                        {/* Items */}
+                                                                        {items.length > 0 && (
+                                                                            <div className="space-y-2 pt-1">
+                                                                                {items.map((item) => {
+                                                                                    const itemPending = updateChecklistItem.isPending && updateChecklistItem.variables?.itemId === item.id
+                                                                                    return (
+                                                                                        <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-white/70 border border-slate-100 hover:border-slate-200">
+                                                                                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    onClick={() => handleToggleItemCheck(item.id, item.description, item.isCheck)}
+                                                                                                    disabled={itemPending}
+                                                                                                    className="text-slate-400 hover:text-slate-600 shrink-0"
+                                                                                                >
+                                                                                                    {itemPending ? (
+                                                                                                        <Loader2 className="w-4 h-4 animate-spin text-orange-500" />
+                                                                                                    ) : item.isCheck ? (
+                                                                                                        <CheckSquare className="w-4.5 h-4.5 text-emerald-500 fill-emerald-50" />
+                                                                                                    ) : (
+                                                                                                        <Square className="w-4.5 h-4.5 text-slate-300" />
+                                                                                                    )}
+                                                                                                </button>
+                                                                                                <span className={cn(
+                                                                                                    "text-xs font-semibold truncate",
+                                                                                                    item.isCheck ? "text-slate-400 line-through" : "text-slate-700"
+                                                                                                )}>
+                                                                                                    {item.description}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="sm"
+                                                                                                onClick={() => handleDeleteItem(item.id)}
+                                                                                                className="text-slate-400 hover:text-rose-500 h-7 w-7 p-0 shrink-0"
+                                                                                                disabled={deleteChecklistItem.isPending}
+                                                                                            >
+                                                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                                            </Button>
+                                                                                        </div>
+                                                                                    )
+                                                                                })}
+                                                                            </div>
+                                                                        )}
 
-                                                                         {/* Add item form */}
-                                                                         <div className="flex gap-2 pt-1">
-                                                                             <input
-                                                                                 type="text"
-                                                                                 value={newItemTexts[checklist.id] || ''}
-                                                                                 onChange={e => setNewItemTexts(prev => ({ ...prev, [checklist.id]: e.target.value }))}
-                                                                                 placeholder="Thêm công việc nhỏ..."
-                                                                                 className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:border-red-500 focus:outline-none"
-                                                                                 onKeyDown={e => {
-                                                                                     if (e.key === 'Enter') {
-                                                                                         e.preventDefault()
-                                                                                         handleCreateItem(checklist.id)
-                                                                                     }
-                                                                                 }}
-                                                                             />
-                                                                             <Button
-                                                                                 type="button"
-                                                                                 onClick={() => handleCreateItem(checklist.id)}
-                                                                                 className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold h-7 text-[10px] rounded-lg px-2"
-                                                                                 disabled={createChecklistItem.isPending}
-                                                                             >
-                                                                                 Thêm
-                                                                             </Button>
-                                                                         </div>
-                                                                     </div>
-                                                                 )
-                                                             })}
-                                                         </div>
-                                                     )}
-                                                 </Card>
+                                                                        {/* Add item form */}
+                                                                        <div className="flex gap-2 pt-1">
+                                                                            <input
+                                                                                type="text"
+                                                                                value={newItemTexts[checklist.id] || ''}
+                                                                                onChange={e => setNewItemTexts(prev => ({ ...prev, [checklist.id]: e.target.value }))}
+                                                                                placeholder="Thêm công việc nhỏ..."
+                                                                                className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:border-red-500 focus:outline-none"
+                                                                                onKeyDown={e => {
+                                                                                    if (e.key === 'Enter') {
+                                                                                        e.preventDefault()
+                                                                                        handleCreateItem(checklist.id)
+                                                                                    }
+                                                                                }}
+                                                                            />
+                                                                            <Button
+                                                                                type="button"
+                                                                                onClick={() => handleCreateItem(checklist.id)}
+                                                                                className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold h-7 text-[10px] rounded-lg px-2"
+                                                                                disabled={createChecklistItem.isPending}
+                                                                            >
+                                                                                Thêm
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </Card>
 
-</div>
+                                            </div>
 
                                             {/* Team members sidebar */}
                                             <div className="space-y-4">
@@ -1677,11 +1677,11 @@ export default function RescuerLeaderDashboard() {
                                                                     <Badge variant="outline" className="text-xs font-bold text-blue-600 border-blue-200 bg-blue-50/50">
                                                                         {dictType[missionDetail.request.emergencyType] || missionDetail.request.emergencyType}
                                                                     </Badge>
-                                                                    <Badge variant="outline" className={cn("text-xs font-bold border-0", 
+                                                                    <Badge variant="outline" className={cn("text-xs font-bold border-0",
                                                                         missionDetail.request.priority === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                                                                        missionDetail.request.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                                                                        missionDetail.request.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
-                                                                        'bg-blue-100 text-blue-700'
+                                                                            missionDetail.request.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                                                                                missionDetail.request.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
+                                                                                    'bg-blue-100 text-blue-700'
                                                                     )}>
                                                                         {dictPriority[missionDetail.request.priority] || missionDetail.request.priority}
                                                                     </Badge>
@@ -1709,7 +1709,7 @@ export default function RescuerLeaderDashboard() {
                                                                             </div>
                                                                         </div>
                                                                         {missionDetail.request.requestedBy.phoneNumber && (
-                                                                            <a 
+                                                                            <a
                                                                                 href={`tel:${missionDetail.request.requestedBy.phoneNumber}`}
                                                                                 className="mt-1 flex items-center justify-center gap-2 w-full py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-extrabold text-slate-700 transition-colors shadow-sm"
                                                                             >
@@ -1736,9 +1736,9 @@ export default function RescuerLeaderDashboard() {
                                                                         <div className="grid grid-cols-2 gap-2">
                                                                             {missionDetail.request.medias.map((media: any) => (
                                                                                 <div key={media.id} className="relative aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200 group">
-                                                                                    <img 
-                                                                                        src={media.secureUrl || media.mediaUrl} 
-                                                                                        alt="Incident scene" 
+                                                                                    <img
+                                                                                        src={media.secureUrl || media.mediaUrl}
+                                                                                        alt="Incident scene"
                                                                                         className="object-cover w-full h-full hover:scale-105 transition-transform duration-300 cursor-zoom-in"
                                                                                         onClick={() => window.open(media.secureUrl || media.mediaUrl, '_blank')}
                                                                                     />

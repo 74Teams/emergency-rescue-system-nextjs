@@ -1,6 +1,5 @@
 'use client'
 
-import { CitizenRequestDetailDialog } from '@/components/dashboards/citizen/CitizenRequestDetailDialog'
 import {
     Sidebar,
     SidebarContent,
@@ -11,6 +10,7 @@ import {
     SidebarMenuItem,
     SidebarRail,
     SidebarSeparator,
+    useSidebar,
 } from '@/components/ui/sidebar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -602,8 +602,6 @@ export function CitizenSidebar() {
     const [search, setSearch] = useState('')
     const [statusFilter, setStatusFilter] = useState<FilterStatus>('ALL')
     const [createOpen, setCreateOpen] = useState(false)
-    const [selectedRequest, setSelectedRequest] =
-        useState<RequestDetail | null>(null)
 
     // Resize logic
     const [sidebarWidth, setSidebarWidth] = useState(380)
@@ -658,7 +656,6 @@ export function CitizenSidebar() {
     }, [requests, statusFilter, search])
 
     const openDetail = (r: RequestDetail) => {
-        setSelectedRequest(r)
         // Also fly the map to the request location
         if (r.location?.latitude && r.location?.longitude) {
             window.dispatchEvent(
@@ -666,206 +663,193 @@ export function CitizenSidebar() {
                     detail: {
                         lat: r.location.latitude,
                         lng: r.location.longitude,
+                        requestId: r.id
                     },
                 })
             )
         }
+        
+        // On mobile, automatically close the sidebar to see the map
+        if (isMobile) {
+            setOpenMobile(false)
+        }
     }
 
+    const { open, isMobile, openMobile, setOpenMobile } = useSidebar()
+
+    // ─── Shared inner content ────────────────────────────────────────────────
+    const innerContent = (
+        <div className="flex flex-col h-full overflow-hidden bg-white">
+            {/* ── HEADER ── */}
+            <SidebarHeader className="px-4 py-3 bg-white border-b border-slate-200 shrink-0">
+                {/* Search */}
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400 pointer-events-none" />
+                    <Input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Tìm địa chỉ, loại sự cố..."
+                        className="h-8 pl-8 text-xs bg-slate-50 border-slate-200 rounded-lg focus-visible:ring-emerald-500"
+                    />
+                </div>
+                {/* Status filter chips */}
+                <div className="flex flex-wrap gap-1 mt-2">
+                    {STATUS_FILTERS.map(f => {
+                        const count =
+                            f.value === 'ALL'
+                                ? requests.length
+                                : requests.filter(r => r.status === f.value).length
+                        return (
+                            <button
+                                key={f.value}
+                                type="button"
+                                onClick={() => setStatusFilter(f.value)}
+                                className={cn(
+                                    'px-2 py-0.5 rounded-full text-[10px] font-bold transition-all border',
+                                    statusFilter === f.value
+                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-300 hover:text-emerald-700'
+                                )}
+                            >
+                                {f.label}
+                                {count > 0 && (
+                                    <span className="ml-1 opacity-70">({count})</span>
+                                )}
+                            </button>
+                        )
+                    })}
+                </div>
+            </SidebarHeader>
+
+            <SidebarSeparator />
+
+            {/* ── CONTENT ── */}
+            <SidebarContent className="flex-1 overflow-hidden p-0">
+                <ScrollArea className="h-full">
+                    <div className="flex flex-col gap-2 p-3">
+                        {isLoading && (
+                            <>
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex flex-col gap-2 p-3 rounded-lg border border-slate-100"
+                                    >
+                                        <Skeleton className="h-3 w-28" />
+                                        <Skeleton className="h-3 w-full" />
+                                        <Skeleton className="h-3 w-20" />
+                                    </div>
+                                ))}
+                            </>
+                        )}
+
+                        {isError && (
+                            <div className="flex flex-col items-center gap-2 py-10 text-slate-400">
+                                <XCircle className="size-8 text-red-300" />
+                                <p className="text-xs text-center">
+                                    Không thể tải yêu cầu.
+                                    <br />
+                                    Vui lòng thử lại.
+                                </p>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => refetch()}
+                                    className="h-7 text-xs"
+                                >
+                                    Thử lại
+                                </Button>
+                            </div>
+                        )}
+
+                        {!isLoading && !isError && filtered.length === 0 && (
+                            <div className="flex flex-col items-center gap-2 py-10 text-slate-400">
+                                <Filter className="size-8 text-slate-200" />
+                                <p className="text-xs text-center">
+                                    {search || statusFilter !== 'ALL'
+                                        ? 'Không tìm thấy yêu cầu phù hợp.'
+                                        : 'Chưa có yêu cầu cứu trợ nào.'}
+                                </p>
+                            </div>
+                        )}
+
+                        {!isLoading &&
+                            filtered.map(request => (
+                                <RequestCard
+                                    key={request.id}
+                                    request={request}
+                                    onClick={() => openDetail(request)}
+                                />
+                            ))}
+                    </div>
+                </ScrollArea>
+            </SidebarContent>
+
+            {/* ── FOOTER ── */}
+            {pathname !== '/sos' && (
+                <SidebarFooter className="p-3 border-t border-slate-200 bg-white shrink-0">
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton
+                                onClick={() => router.push('/sos')}
+                                className="h-10 w-full bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg justify-center gap-2 cursor-pointer"
+                            >
+                                <Plus className="size-4" />
+                                <span>Tạo yêu cầu cứu trợ mới</span>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                    <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-slate-400 font-mono">
+                        <span>
+                            {requests.filter(r => r.status === 'PENDING').length}{' '}
+                            chờ xử lý
+                        </span>
+                        <span>·</span>
+                        <span>
+                            {requests.filter(r => r.status === 'IN_PROGRESS').length}{' '}
+                            đang ứng cứu
+                        </span>
+                    </div>
+                </SidebarFooter>
+            )}
+        </div>
+    )
+
+    // ─── Mobile: Sheet overlay, closed by default ────────────────────────────
+    if (isMobile) {
+        return (
+            <>
+                <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+                    <SheetContent side="left" className="p-0 w-[300px] flex flex-col">
+                        <SheetHeader className="sr-only">
+                            <SheetTitle>Yêu cầu cứu trợ</SheetTitle>
+                        </SheetHeader>
+                        {innerContent}
+                    </SheetContent>
+                </Sheet>
+            </>
+        )
+    }
+
+    // ─── Desktop: inline resizable sidebar ──────────────────────────────────
     return (
-        <div className="relative h-full flex shrink-0" style={{ width: sidebarWidth }}>
+        <div
+            className="relative h-full flex shrink-0 transition-[width] duration-200 ease-linear overflow-hidden"
+            style={{ width: open ? sidebarWidth : 0 }}
+        >
             <Sidebar
                 collapsible="none"
                 className="w-full border-r border-slate-200 flex flex-col shrink-0 h-full relative"
             >
-                {/* ── HEADER ── */}
-                <SidebarHeader className="px-4 py-3 bg-white border-b border-slate-200 shrink-0">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2 group cursor-pointer">
-                            <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white shrink-0">
-                                <LifeBuoy className="size-4 stroke-[2.5] transition-transform duration-500 group-hover:rotate-45" />
-                            </div>
-                            <span className="text-sm font-black text-slate-900">
-                                Yêu cầu cứu trợ
-                            </span>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => refetch()}
-                            disabled={isFetching}
-                            className="flex size-7 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
-                            title="Làm mới"
-                        >
-                            <RefreshCw
-                                className={cn(
-                                    'size-3.5',
-                                    isFetching && 'animate-spin'
-                                )}
-                            />
-                        </button>
-                    </div>
-
-                    {/* Search */}
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400 pointer-events-none" />
-                        <Input
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder="Tìm địa chỉ, loại sự cố..."
-                            className="h-8 pl-8 text-xs bg-slate-50 border-slate-200 rounded-lg focus-visible:ring-emerald-500"
-                        />
-                    </div>
-
-                    {/* Status filter chips */}
-                    <div className="flex flex-wrap gap-1 mt-2">
-                        {STATUS_FILTERS.map(f => {
-                            const count =
-                                f.value === 'ALL'
-                                    ? requests.length
-                                    : requests.filter(r => r.status === f.value)
-                                          .length
-                            return (
-                                <button
-                                    key={f.value}
-                                    type="button"
-                                    onClick={() => setStatusFilter(f.value)}
-                                    className={cn(
-                                        'px-2 py-0.5 rounded-full text-[10px] font-bold transition-all border',
-                                        statusFilter === f.value
-                                            ? 'bg-emerald-600 text-white border-emerald-600'
-                                            : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-300 hover:text-emerald-700'
-                                    )}
-                                >
-                                    {f.label}
-                                    {count > 0 && (
-                                        <span className="ml-1 opacity-70">
-                                            ({count})
-                                        </span>
-                                    )}
-                                </button>
-                            )
-                        })}
-                    </div>
-                </SidebarHeader>
-
-                <SidebarSeparator />
-
-                {/* ── CONTENT ── */}
-                <SidebarContent className="flex-1 overflow-hidden p-0">
-                    <ScrollArea className="h-full">
-                        <div className="flex flex-col gap-2 p-3">
-                            {isLoading && (
-                                <>
-                                    {Array.from({ length: 4 }).map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className="flex flex-col gap-2 p-3 rounded-lg border border-slate-100"
-                                        >
-                                            <Skeleton className="h-3 w-28" />
-                                            <Skeleton className="h-3 w-full" />
-                                            <Skeleton className="h-3 w-20" />
-                                        </div>
-                                    ))}
-                                </>
-                            )}
-
-                            {isError && (
-                                <div className="flex flex-col items-center gap-2 py-10 text-slate-400">
-                                    <XCircle className="size-8 text-red-300" />
-                                    <p className="text-xs text-center">
-                                        Không thể tải yêu cầu.
-                                        <br />
-                                        Vui lòng thử lại.
-                                    </p>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => refetch()}
-                                        className="h-7 text-xs"
-                                    >
-                                        Thử lại
-                                    </Button>
-                                </div>
-                            )}
-
-                            {!isLoading &&
-                                !isError &&
-                                filtered.length === 0 && (
-                                    <div className="flex flex-col items-center gap-2 py-10 text-slate-400">
-                                        <Filter className="size-8 text-slate-200" />
-                                        <p className="text-xs text-center">
-                                            {search || statusFilter !== 'ALL'
-                                                ? 'Không tìm thấy yêu cầu phù hợp.'
-                                                : 'Chưa có yêu cầu cứu trợ nào.'}
-                                        </p>
-                                    </div>
-                                )}
-
-                            {!isLoading &&
-                                filtered.map(request => (
-                                    <RequestCard
-                                        key={request.id}
-                                        request={request}
-                                        onClick={() => openDetail(request)}
-                                    />
-                                ))}
-                        </div>
-                    </ScrollArea>
-                </SidebarContent>
-
-                {/* ── FOOTER ── */}
-                {pathname !== '/sos' && (
-                    <SidebarFooter className="p-3 border-t border-slate-200 bg-white shrink-0">
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    onClick={() => router.push('/sos')}
-                                    className="h-10 w-full bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg justify-center gap-2 cursor-pointer"
-                                >
-                                    <Plus className="size-4" />
-                                    <span>Tạo yêu cầu cứu trợ mới</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-
-                        {/* Summary */}
-                        <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-slate-400 font-mono">
-                            <span>
-                                {
-                                    requests.filter(r => r.status === 'PENDING')
-                                        .length
-                                }{' '}
-                                chờ xử lý
-                            </span>
-                            <span>·</span>
-                            <span>
-                                {
-                                    requests.filter(r => r.status === 'IN_PROGRESS')
-                                        .length
-                                }{' '}
-                                đang ứng cứu
-                            </span>
-                        </div>
-                    </SidebarFooter>
-                )}
-
+                {innerContent}
                 <SidebarRail />
             </Sidebar>
 
-            {/* Resize Handle */}
-            <div
-                className="absolute top-0 -right-0.5 w-1.5 h-full cursor-col-resize hover:bg-emerald-500/50 transition-colors z-50"
-                onMouseDown={startResizing}
-            />
-
-            {/* Request Detail Dialog */}
-            <CitizenRequestDetailDialog
-                request={selectedRequest}
-                open={selectedRequest !== null}
-                onOpenChange={v => {
-                    if (!v) setSelectedRequest(null)
-                }}
-            />
+            {open && (
+                <div
+                    className="absolute top-0 -right-0.5 w-1.5 h-full cursor-col-resize hover:bg-emerald-500/50 transition-colors z-50"
+                    onMouseDown={startResizing}
+                />
+            )}
         </div>
     )
 }
