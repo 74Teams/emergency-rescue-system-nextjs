@@ -105,4 +105,10 @@ export const missionsApi = {
             data: payload,
         })
     },
+    remove(missionId: string) {
+        return apiRequest<ApiResponse<null>>({
+            method: 'DELETE',
+            url: apiRouteBuilders.missions.byId(missionId),
+        })
+    },
 }

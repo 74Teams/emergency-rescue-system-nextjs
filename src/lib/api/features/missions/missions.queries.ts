@@ -142,3 +142,14 @@ export function useAbortMission() {
     })
 }
 
+export function useDeleteMissionMutation() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (missionId: string) => missionsApi.remove(missionId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: missionKeys.lists() })
+            queryClient.invalidateQueries({ queryKey: ['requests'] })
+        },
+    })
+}
+

@@ -796,7 +796,6 @@ export default function DispatcherMapView({
           {/* Render Request Markers */}
           {requestsWithLocation.map((req) => {
             const isSelected = selectedRequestId === req.id;
-            const cfg = getPopupHeaderConfig(req.status);
             return (
               <Marker
                 key={req.id}
@@ -804,69 +803,12 @@ export default function DispatcherMapView({
                 icon={createRequestIcon(req, isSelected)}
                 zIndexOffset={1000 + (isSelected ? 100 : 0)} // sự cố được xếp đè lên trên các đội cứu hộ
                 eventHandlers={{
-                  click: () => onSelectRequest?.(req),
-                  popupclose: () => onSelectRequest?.(null),
+                  click: () => {
+                    onSelectRequest?.(req);
+                    onAssignRequest?.(req);
+                  },
                 }}
-              >
-                <Popup className="shadcn-popup">
-                  <div className="flex flex-col w-[240px] bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-                    <div className={cn("px-3 py-2 border-b flex items-center justify-between", cfg.headerBg)}>
-                      <div className="flex items-center gap-1.5">
-                        <span className="relative flex h-2 w-2">
-                          {cfg.ping && (
-                            <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", cfg.ping)}></span>
-                          )}
-                          <span className={cn("relative inline-flex rounded-full h-2 w-2", cfg.dot)}></span>
-                        </span>
-                        <span className={cn("text-[10px] font-bold uppercase tracking-wider", cfg.text)}>
-                          {dictPriority[req.priority] || req.priority}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        ID-{req.id?.substring(0, 4)}
-                      </span>
-                    </div>
-
-                    <div className="p-3 space-y-3">
-                      <div>
-                        <h4 className="font-extrabold text-slate-900 text-base leading-none">
-                          {dictType[req.emergencyType] || req.emergencyType}
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                          <span className="font-semibold">{dictStatus[req.status] || req.status}</span>
-                          {" · "}
-                          {req.location?.address
-                            ? req.location.address
-                                .split(",")
-                                .slice(0, 2)
-                                .join(",")
-                            : "Đang cập nhật vị trí"}
-                        </p>
-                        <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{req.createdAt ? new Date(req.createdAt).toLocaleString("vi-VN") : "Chưa rõ thời gian"}</span>
-                        </p>
-                      </div>
-
-                      {(req.status === "PENDING" || req.status === "ACCEPTED") && onAssignRequest && (
-                        <button 
-                          className="w-full cursor-pointer group relative flex items-center justify-center gap-2 bg-[#003da5] hover:bg-blue-700 text-white text-[11px] font-bold py-2.5 rounded-xl transition-all duration-300 active:scale-95 overflow-hidden"
-                          onClick={() => {
-                            onSelectRequest?.(req);
-                            onAssignRequest(req);
-                          }}
-                        >
-                          <Send className="w-3.5 h-3.5 mr-1" />
-                          <span className="relative z-10">
-                            Giao nhiệm vụ
-                          </span>
-                          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
+              />
             );
           })}
         </MapContainer>

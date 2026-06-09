@@ -36,8 +36,38 @@ export function resolveEnum<T>(
 
 /** Normalize a request from API (numeric enums → string enums) */
 export function normalizeRequest(req: RequestSummary): RequestSummary {
+  // Normalize request medias if they exist
+  const normalizedMedias = req.medias?.map((media: any) => {
+    // Read resourceType (csharp backend property) or mediaType
+    let type = media.resourceType !== undefined ? media.resourceType : media.mediaType;
+    if (typeof type === "number") {
+      // Map enum integers
+      if (type === 0) type = "IMAGE";
+      else if (type === 1) type = "VIDEO";
+      else if (type === 2) type = "AUDIO";
+      else type = "FILE";
+    } else if (typeof type === "string") {
+      const upper = type.toUpperCase();
+      if (upper === "IMAGE" || upper === "0") type = "IMAGE";
+      else if (upper === "VIDEO" || upper === "VIDEOS" || upper === "1") type = "VIDEO";
+      else if (upper === "AUDIO" || upper === "2") type = "AUDIO";
+      else type = "FILE";
+    } else {
+      type = "IMAGE"; // Fallback safe guess
+    }
+
+    const url = media.mediaUrl || media.secureUrl || "";
+
+    return {
+      ...media,
+      mediaUrl: url,
+      mediaType: type
+    };
+  }) ?? [];
+
   return {
     ...req,
+    medias: normalizedMedias,
     emergencyType: resolveEnum(
       req.emergencyType as EmergencyType | number,
       numericEmergencyTypeMap,
@@ -186,9 +216,7 @@ export function useCreateMissionMutation() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: apiQueryKeys.missions.all }),
-        queryClient.invalidateQueries({
-          queryKey: apiQueryKeys.requests.dispatcher({ pageSize: 50 }),
-        }),
+        queryClient.invalidateQueries({ queryKey: ["requests"] }),
         queryClient.invalidateQueries({
           queryKey: apiQueryKeys.rescueTeams.all,
         }),
@@ -300,6 +328,46 @@ export function useAbortMissionMutation() {
           queryKey: apiQueryKeys.rescueTeams.all,
         }),
       ]);
+    },
+  });
+}
+
+// ===========================
+// DELETE REQUEST
+// ===========================
+export function useDeleteRequestMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const response = await requestsApi.remove(requestId);
+      return response.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["requests"] });
+    },
+  });
+}
+
+// ===========================
+// UPDATE REQUEST (e.g., Change Priority)
+// ===========================
+export function useUpdateRequestMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      requestId,
+      payload,
+    }: {
+      requestId: string;
+      payload: any;
+    }) => {
+      const response = await requestsApi.update(requestId, payload);
+      return response.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["requests"] });
     },
   });
 }
