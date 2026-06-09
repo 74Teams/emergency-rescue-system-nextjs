@@ -96,6 +96,7 @@ import {
     useAbortMissionMutation,
 } from '@/lib/api/features/missions/rescuer-leader.mutations'
 import { useMissionDetail } from '@/lib/api/features/missions/missions.queries'
+import { useRequestDetail } from '@/lib/api/features/requests/requests.queries'
 import {
     useCreateChecklist,
     useDeleteChecklist,
@@ -1232,6 +1233,8 @@ export default function RescuerLeaderDashboard() {
                                                     </div>
                                                 </div>
 
+                                                <PendingMissionDetails requestId={mission.requestId} />
+
                                                 <div className="flex items-center gap-3">
                                                     <Button
                                                         onClick={() => handleAccept(mission.id)}
@@ -2050,5 +2053,44 @@ export default function RescuerLeaderDashboard() {
                 }}
             />
         </SidebarProvider>
+    )
+}
+
+function PendingMissionDetails({ requestId }: { requestId: string }) {
+    const { data: requestDetail } = useRequestDetail(requestId)
+
+    if (!requestDetail) return null
+
+    return (
+        <div className="bg-amber-50/50 rounded-xl p-4 mb-5 border border-amber-100/50 space-y-3 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-start justify-between">
+                <div>
+                    <p className="text-[10px] text-amber-600/70 uppercase tracking-widest font-bold mb-1">Người yêu cầu</p>
+                    <p className="text-sm font-bold text-amber-950 flex items-center gap-2">
+                        <User className="w-4 h-4 text-amber-500" />
+                        {requestDetail.requestedBy?.fullName || 'Ẩn danh'}
+                    </p>
+                    {(requestDetail.requestedBy?.phoneNumber || requestDetail.phoneNumber) && (
+                        <p className="text-sm text-amber-800 flex items-center gap-2 mt-1">
+                            <Phone className="w-4 h-4 text-amber-500 shrink-0" />
+                            {requestDetail.requestedBy?.phoneNumber || requestDetail.phoneNumber}
+                        </p>
+                    )}
+                </div>
+                <div className="text-right max-w-[50%]">
+                    <p className="text-[10px] text-amber-600/70 uppercase tracking-widest font-bold mb-1">Hiện trường</p>
+                    <p className="text-sm font-bold text-amber-950 flex items-start justify-end gap-2 text-right">
+                        <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                        <span className="line-clamp-2">{requestDetail.location?.address || 'Chưa xác định'}</span>
+                    </p>
+                </div>
+            </div>
+            {requestDetail.description && (
+                <div className="pt-2 border-t border-amber-100">
+                    <p className="text-[10px] text-amber-600/70 uppercase tracking-widest font-bold mb-1">Mô tả tình trạng</p>
+                    <p className="text-sm text-amber-900 line-clamp-2">{requestDetail.description}</p>
+                </div>
+            )}
+        </div>
     )
 }

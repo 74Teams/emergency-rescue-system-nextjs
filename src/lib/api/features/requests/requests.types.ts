@@ -39,6 +39,7 @@ export interface RequestSummary {
   priority: PriorityLevel;
   status: RequestStatus;
   description: string;
+  phoneNumber?: string;
   location: RequestLocationSummary | null;
   requestedBy: RequestOwnerSummary | null;
   medias?: RequestMedia[];
@@ -65,6 +66,7 @@ export interface CreateRequestInput {
   emergencyType: EmergencyType | number;
   priority: PriorityLevel | number;
   description: string;
+  phoneNumber?: string;
   locationId: string;
   medias?: File[];
 }

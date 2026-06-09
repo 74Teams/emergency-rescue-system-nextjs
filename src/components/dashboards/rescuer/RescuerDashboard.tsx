@@ -369,7 +369,6 @@ export default function RescuerDashboard() {
                             <div>
                                 <h1 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
                                     Rescuer
-
                                 </h1>
                                 <p className="text-[11px] font-bold text-orange-600 uppercase tracking-widest">
                                     Cứu hộ viên

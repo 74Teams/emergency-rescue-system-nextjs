@@ -311,25 +311,25 @@ export default function RescuerCurrentMission({ currentMission, teamMembers }: a
                                     </div>
 
                                     {/* Sender/Contact Info */}
-                                    {missionDetail.request.requestedBy && (
+                                    {(missionDetail.request.requestedBy || missionDetail.request.phoneNumber) && (
                                         <div className="p-3 bg-red-50/10 border border-red-100/30 rounded-xl space-y-2">
                                             <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block">Thông tin liên hệ người báo cáo</span>
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-red-100 text-red-650 flex items-center justify-center font-bold text-xs shrink-0">
-                                                    {missionDetail.request.requestedBy.fullName?.charAt(0).toUpperCase()}
+                                                    {missionDetail.request.requestedBy?.fullName?.charAt(0).toUpperCase() || '?'}
                                                 </div>
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-xs font-bold text-slate-800 truncate">{missionDetail.request.requestedBy.fullName}</p>
-                                                    <p className="text-[10px] text-slate-500 truncate">{missionDetail.request.requestedBy.email || 'Không có email'}</p>
+                                                    <p className="text-xs font-bold text-slate-800 truncate">{missionDetail.request.requestedBy?.fullName || 'Ẩn danh'}</p>
+                                                    <p className="text-[10px] text-slate-500 truncate">{missionDetail.request.requestedBy?.email || 'Không có email'}</p>
                                                 </div>
                                             </div>
-                                            {missionDetail.request.requestedBy.phoneNumber && (
+                                            {(missionDetail.request.phoneNumber || missionDetail.request.requestedBy?.phoneNumber) && (
                                                 <a 
-                                                    href={`tel:${missionDetail.request.requestedBy.phoneNumber}`}
+                                                    href={`tel:${missionDetail.request.phoneNumber || missionDetail.request.requestedBy?.phoneNumber}`}
                                                     className="mt-1 flex items-center justify-center gap-2 w-full py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-extrabold text-slate-700 transition-colors shadow-sm"
                                                 >
                                                     <Phone size={12} className="text-slate-500" />
-                                                    Gọi: {missionDetail.request.requestedBy.phoneNumber}
+                                                    Gọi: {missionDetail.request.phoneNumber || missionDetail.request.requestedBy?.phoneNumber}
                                                 </a>
                                             )}
                                         </div>

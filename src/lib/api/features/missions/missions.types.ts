@@ -33,6 +33,7 @@ export interface MissionSummary {
         priority: string
         status: string
         description?: string
+        phoneNumber?: string
         location?: {
             id?: string
             address: string

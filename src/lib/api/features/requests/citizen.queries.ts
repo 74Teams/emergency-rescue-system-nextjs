@@ -35,6 +35,7 @@ export interface CitizenRequestSubmissionInput {
   emergencyType: number;
   priority: number;
   description: string;
+  phoneNumber: string;
   address: string;
   latitude: number;
   longitude: number;
@@ -210,13 +211,13 @@ function mapSummaryToRequestDetail(
   const priority = resolvePriority(request.priority as PriorityLevel | number);
   const status = resolveStatus(request.status as ApiRequestStatus | number);
 
-  const base: RequestDetail = {
+    const base: RequestDetail = {
     id: request.id,
     userId: publicView ? "" : requester.id,
     requestedBy: {
           id: requester.id,
           fullName: requester.fullName,
-          phoneNumber: requester.phoneNumber ?? "",
+          phoneNumber: request.phoneNumber || requester.phoneNumber || "",
           email: requester.email ?? "",
         },
     emergencyType: apiEmergencyTypeMap[emergencyType] ?? "OTHER",
@@ -288,6 +289,7 @@ export function useCreateCitizenRequestMutation() {
         emergencyType: payload.emergencyType,
         priority: payload.priority,
         description: payload.description,
+        phoneNumber: payload.phoneNumber,
         locationId,
         medias: payload.medias,
       });

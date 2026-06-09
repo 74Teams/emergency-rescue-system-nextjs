@@ -30,6 +30,7 @@ function buildRequestFormData(payload: CreateRequestInput | UpdateRequestInput) 
   appendIfDefined(formData, "emergencyType", payload.emergencyType);
   appendIfDefined(formData, "priority", payload.priority);
   appendIfDefined(formData, "description", payload.description);
+  appendIfDefined(formData, "phoneNumber", payload.phoneNumber);
   appendIfDefined(formData, "locationId", payload.locationId);
   appendIfDefined(formData, "status", "PENDING");
   appendFiles(formData, "Files", payload.medias);

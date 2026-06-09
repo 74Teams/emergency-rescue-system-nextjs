@@ -25,6 +25,9 @@ import {
     Send,
     Trash2,
     UploadCloud,
+    AlertTriangle,
+    Activity,
+    CheckCircle,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -57,7 +60,9 @@ export default function SubmitRequestPage() {
     const [address, setAddress] = useState('')
     const [landmark, setLandmark] = useState('')
     const [description, setDescription] = useState('')
+    const [phoneNumber, setPhoneNumber] = useState('')
     const [coords, setCoords] = useState('')
+    const [isLocating, setIsLocating] = useState(false)
 
     const [suggestions, setSuggestions] = useState<
         { display_name: string; lat: string; lon: string }[]
@@ -129,14 +134,19 @@ export default function SubmitRequestPage() {
             return
         }
 
+        setIsLocating(true)
         navigator.geolocation.getCurrentPosition(
             position => {
                 setCoords(
                     `${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`
                 )
+                setIsLocating(false)
                 toast.success('Đã lấy tọa độ hiện tại.')
             },
-            () => toast.error('Không thể lấy vị trí hiện tại.'),
+            () => {
+                setIsLocating(false)
+                toast.error('Không thể lấy vị trí hiện tại.')
+            },
             { enableHighAccuracy: true, timeout: 8000 }
         )
     }
@@ -165,14 +175,65 @@ export default function SubmitRequestPage() {
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault()
 
-        if (!coordsValue) {
-            toast.error('Vui lòng lấy tọa độ GPS trước khi gửi.')
+        if (!phoneNumber.trim()) {
+            toast.error('Vui lòng nhập số điện thoại liên hệ.')
             return
         }
 
-        const [latitude, longitude] = coordsValue
-            .split(',')
-            .map(value => parseFloat(value.trim()))
+        let latitude = 0
+        let longitude = 0
+        let finalAddress = address.trim()
+
+        if (coordsValue) {
+            const parts = coordsValue.split(',')
+            latitude = parseFloat(parts[0].trim())
+            longitude = parseFloat(parts[1].trim())
+            
+            if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+                toast.error('Tọa độ hiện tại không hợp lệ.')
+                return
+            }
+
+            if (!finalAddress) {
+                const loadingToast = toast.loading('Đang tự động lấy địa chỉ từ tọa độ...')
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`)
+                    const data = await res.json()
+                    if (data && data.display_name) {
+                        finalAddress = data.display_name
+                        setAddress(data.display_name)
+                    }
+                    toast.dismiss(loadingToast)
+                } catch (error) {
+                    toast.dismiss(loadingToast)
+                    console.error('Lỗi khi lấy địa chỉ:', error)
+                }
+            }
+        } else {
+            if (!finalAddress) {
+                toast.error('Vui lòng nhập địa chỉ sự cố.')
+                return
+            }
+            
+            const loadingToast = toast.loading('Đang tự động lấy tọa độ từ địa chỉ...')
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(finalAddress)}&format=json&limit=1&countrycodes=vn`)
+                const data = await res.json()
+                if (data && data.length > 0) {
+                    latitude = parseFloat(data[0].lat)
+                    longitude = parseFloat(data[0].lon)
+                    toast.dismiss(loadingToast)
+                } else {
+                    toast.dismiss(loadingToast)
+                    toast.error('Không thể tự động tìm tọa độ từ địa chỉ này. Vui lòng bấm "Lấy vị trí hiện tại".')
+                    return
+                }
+            } catch (error) {
+                toast.dismiss(loadingToast)
+                toast.error('Lỗi khi định vị địa chỉ.')
+                return
+            }
+        }
 
         if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
             toast.error('Tọa độ không hợp lệ.')
@@ -183,8 +244,9 @@ export default function SubmitRequestPage() {
             await createRequestMutation.mutateAsync({
                 emergencyType: emergencyCategoryToApiValue[emergencyType],
                 priority: priorityToApiValue[priority],
-                description,
-                address: address || 'Chưa có địa chỉ',
+                description: description,
+                phoneNumber: phoneNumber.trim(),
+                address: finalAddress || 'Chưa có địa chỉ',
                 latitude,
                 longitude,
                 landmark: landmark || undefined,
@@ -195,6 +257,7 @@ export default function SubmitRequestPage() {
             setEmergencyType('FLOOD')
             setPriority('CRITICAL')
             setAddress('')
+            setPhoneNumber('')
             setLandmark('')
             setDescription('')
             setCoords('')
@@ -292,115 +355,132 @@ export default function SubmitRequestPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="CRITICAL">
-                                            Cực kỳ khẩn cấp
+                                            <div className="flex items-center gap-2 text-red-600 font-bold"><AlertTriangle className="w-4 h-4"/> Cực kỳ khẩn cấp</div>
                                         </SelectItem>
                                         <SelectItem value="HIGH">
-                                            Nguy hiểm cao
+                                            <div className="flex items-center gap-2 text-orange-600 font-bold"><AlertTriangle className="w-4 h-4"/> Nguy hiểm cao</div>
                                         </SelectItem>
                                         <SelectItem value="MEDIUM">
-                                            Trung bình
+                                            <div className="flex items-center gap-2 text-blue-600 font-bold"><Activity className="w-4 h-4"/> Trung bình</div>
                                         </SelectItem>
                                         <SelectItem value="LOW">
-                                            Thấp
+                                            <div className="flex items-center gap-2 text-slate-600 font-bold"><Activity className="w-4 h-4"/> Thấp</div>
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-800 mb-2">
-                                Địa chỉ *
-                            </label>
-                            <div
-                                ref={suggestionContainerRef}
-                                className="relative"
-                            >
-                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                                <Input
-                                    className="pl-10 bg-slate-50 border-slate-200 h-12 text-md rounded-xl"
-                                    placeholder="Số nhà, tên đường, phường/xã..."
-                                    value={address}
-                                    onChange={event => {
-                                        setAddress(event.target.value)
-                                        setShowSuggestions(true)
-                                    }}
-                                    onFocus={() => setShowSuggestions(true)}
-                                />
-                                {showSuggestions &&
-                                    (isLoadingSuggestions ||
-                                        suggestions.length > 0) && (
-                                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-[250px] overflow-y-auto z-50 animate-in fade-in slide-in-from-top-1">
-                                            {isLoadingSuggestions && (
-                                                <div className="px-4 py-3 text-sm text-slate-500 flex items-center gap-2">
-                                                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                                                    Đang tìm kiếm địa điểm...
-                                                </div>
-                                            )}
-                                            {!isLoadingSuggestions &&
-                                                suggestions.map((item, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        onClick={() =>
-                                                            handleSelectSuggestion(
-                                                                item
-                                                            )
-                                                        }
-                                                        className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-slate-50 last:border-none transition-colors cursor-pointer flex items-start gap-2"
-                                                    >
-                                                        <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                                                        <span className="text-sm text-slate-700 font-medium line-clamp-2">
-                                                            {item.display_name}
-                                                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                                    Địa chỉ *
+                                </label>
+                                <div
+                                    ref={suggestionContainerRef}
+                                    className="relative"
+                                >
+                                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                    <Input
+                                        className="pl-10 bg-slate-50 border-slate-200 h-12 text-md rounded-xl"
+                                        placeholder="Số nhà, tên đường, phường/xã..."
+                                        value={address}
+                                        onChange={event => {
+                                            setAddress(event.target.value)
+                                            setShowSuggestions(true)
+                                        }}
+                                        onFocus={() => setShowSuggestions(true)}
+                                    />
+                                    {showSuggestions &&
+                                        (isLoadingSuggestions ||
+                                            suggestions.length > 0) && (
+                                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-[250px] overflow-y-auto z-50 animate-in fade-in slide-in-from-top-1">
+                                                {isLoadingSuggestions && (
+                                                    <div className="px-4 py-3 text-sm text-slate-500 flex items-center gap-2">
+                                                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                                        Đang tìm kiếm địa điểm...
                                                     </div>
-                                                ))}
-                                        </div>
-                                    )}
+                                                )}
+                                                {!isLoadingSuggestions &&
+                                                    suggestions.map((item, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            onClick={() =>
+                                                                handleSelectSuggestion(
+                                                                    item
+                                                                )
+                                                            }
+                                                            className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-slate-50 last:border-none transition-colors cursor-pointer flex items-start gap-2"
+                                                        >
+                                                            <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                                                            <span className="text-sm text-slate-700 font-medium line-clamp-2">
+                                                                {item.display_name}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        )}
+                                </div>
                             </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-800 mb-2">
-                                Mốc nhận diện
-                            </label>
-                            <Input
-                                className="bg-slate-50 border-slate-200 h-12 rounded-xl"
-                                placeholder="Ví dụ: Gần trường học, ngã tư..."
-                                value={landmark}
-                                onChange={event =>
-                                    setLandmark(event.target.value)
-                                }
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-800 mb-2">
-                                Tọa độ GPS *
-                            </label>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <Input
-                                    className="bg-slate-50 border-slate-200 h-12 rounded-xl font-mono flex-1"
-                                    placeholder="16.05440, 108.20220"
-                                    value={coords}
-                                    onChange={event =>
-                                        setCoords(event.target.value)
-                                    }
-                                />
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                                    Xác định vị trí tự động
+                                </label>
                                 <Button
                                     type="button"
-                                    variant="secondary"
+                                    variant={coordsValue ? "outline" : "secondary"}
                                     onClick={handleGetLocation}
-                                    className="bg-slate-100 hover:bg-slate-200 text-[#003da5] h-12 px-6 rounded-xl font-semibold"
+                                    disabled={isLocating}
+                                    className={`h-12 rounded-xl font-semibold w-fit transition-all duration-300 ${
+                                        isLocating ? "bg-blue-100 text-blue-600" : 
+                                        coordsValue ? "bg-emerald-50 text-emerald-600 border-emerald-200" : 
+                                        "bg-slate-100 hover:bg-slate-200 text-[#003da5]"
+                                    }`}
                                 >
-                                    <LocateFixed className="w-5 h-5 mr-2" />
-                                    Lấy vị trí hiện tại
+                                    {isLocating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : coordsValue ? <CheckCircle className="w-5 h-5 mr-2" /> : <LocateFixed className="w-5 h-5 mr-2" />}
+                                    {isLocating ? 'Đang định vị...' : coordsValue ? 'Lấy lại vị trí' : 'Lấy vị trí hiện tại'}
                                 </Button>
+                                {coordsValue && !isLocating && (
+                                    <p className="text-xs text-emerald-600 font-medium mt-2 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
+                                        <MapPin className="w-3 h-3" /> Đã lấy tọa độ thành công
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                                    Số điện thoại liên hệ *
+                                </label>
+                                <Input
+                                    className="bg-slate-50 border-slate-200 h-12 rounded-xl"
+                                    placeholder="Ví dụ: 0906711211"
+                                    type="tel"
+                                    value={phoneNumber}
+                                    onChange={event =>
+                                        setPhoneNumber(event.target.value)
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                                    Mốc nhận diện
+                                </label>
+                                <Input
+                                    className="bg-slate-50 border-slate-200 h-12 rounded-xl"
+                                    placeholder="Ví dụ: Gần trường học, ngã tư..."
+                                    value={landmark}
+                                    onChange={event =>
+                                        setLandmark(event.target.value)
+                                    }
+                                />
                             </div>
                         </div>
 
                         <div>
                             <label className="block text-sm font-semibold text-slate-800 mb-2">
-                                Số điện thoại và Mô tả tình trạng *
+                                Mô tả tình trạng *
                             </label>
                             <Textarea
                                 className="bg-slate-50 border-slate-200 min-h-[120px] rounded-xl text-md p-4"

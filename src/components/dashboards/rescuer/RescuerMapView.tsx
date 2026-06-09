@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-import { Loader2, Navigation, Layers, ShieldAlert, Phone, AlertTriangle, User, MapPin } from 'lucide-react'
+import { Loader2, Navigation, Layers, ShieldAlert, Phone, AlertTriangle, User, MapPin, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import MAP_LAYERS from '@/constants/map-layers'
 
@@ -171,10 +171,13 @@ export default function RescuerMapView({ currentMission, teamLocation }: Rescuer
         )
     }
 
+    const cleanDescription = requestDetails?.description || currentMission?.request?.description || '';
+    const displayPhone = requestDetails?.requestedBy?.phoneNumber || currentMission?.request?.requestedBy?.phoneNumber || (requestDetails as any)?.phoneNumber || currentMission?.request?.phoneNumber || '';
+
     return (
-        <div className="w-full h-full relative flex flex-col md:flex-row bg-slate-100">
+        <div className="w-full h-full relative flex flex-col-reverse md:flex-row bg-slate-100">
             {/* SIDE PANEL (HUD) Chi Tiết Nhiệm Vụ */}
-            <div className="w-full md:w-[380px] bg-white border-r border-slate-200 flex flex-col h-full overflow-y-auto shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.05)] z-[1000] custom-scrollbar">
+            <div className="w-full md:w-[380px] bg-white md:border-r border-t md:border-t-0 border-slate-200 flex flex-col h-[45vh] md:h-full overflow-y-auto shrink-0 shadow-[0_-4px_24px_rgba(0,0,0,0.05)] md:shadow-[4px_0_24px_rgba(0,0,0,0.05)] z-10 custom-scrollbar">
                 {!currentMission ? (
                     <div className="flex flex-col items-center justify-center text-center h-full p-8 text-slate-500">
                         <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
@@ -182,6 +185,14 @@ export default function RescuerMapView({ currentMission, teamLocation }: Rescuer
                         </div>
                         <h3 className="font-bold text-slate-800 text-lg">Đội Đang Ở Trạng Thái Standby</h3>
                         <p className="text-sm text-slate-500 mt-2 max-w-[250px]">Chưa có nhiệm vụ nào được phân công. Vị trí trên bản đồ là cứ điểm hiện tại của đội.</p>
+                    </div>
+                ) : currentMission.status === 'ASSIGNED' ? (
+                    <div className="flex flex-col items-center justify-center text-center h-full p-8 text-slate-500">
+                        <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-6 border border-orange-100 shadow-sm animate-pulse">
+                            <Clock className="w-10 h-10 text-orange-400" />
+                        </div>
+                        <h3 className="font-bold text-slate-800 text-lg">Đang Đợi Leader Xử Lý</h3>
+                        <p className="text-sm text-slate-500 mt-2 max-w-[250px]">Nhiệm vụ mới đã được điều phối cho đội. Đang chờ đội trưởng xác nhận và triển khai.</p>
                     </div>
                 ) : (
                     <div className="flex flex-col min-h-full">
@@ -236,11 +247,11 @@ export default function RescuerMapView({ currentMission, teamLocation }: Rescuer
                                 )}
                             </div>
 
-                            {(requestDetails?.description || currentMission.request?.description) && (
+                            {cleanDescription && (
                                 <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100">
                                     <p className="text-[11px] font-bold text-orange-500 uppercase tracking-widest mb-2">Mô tả nhiệm vụ</p>
                                     <p className="text-sm text-slate-700 leading-relaxed font-medium">
-                                        {requestDetails?.description || currentMission.request?.description}
+                                        {cleanDescription}
                                     </p>
                                 </div>
                             )}
@@ -250,19 +261,19 @@ export default function RescuerMapView({ currentMission, teamLocation }: Rescuer
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Người Báo Cáo</p>
                                     <div className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-1.5">
                                         <User size={14} className="text-slate-500 shrink-0" />
-                                        <span className="truncate">{requestDetails?.requestedBy?.fullName || currentMission.request?.requestedBy?.fullName || 'Ẩn danh'}</span>
+                                        <span className="truncate">{requestDetails?.requestedBy?.fullName || currentMission?.request?.requestedBy?.fullName || 'Ẩn danh'}</span>
                                     </div>
-                                    {(requestDetails?.requestedBy?.phoneNumber || currentMission.request?.requestedBy?.phoneNumber) && (
+                                    {displayPhone && (
                                         <div className="flex items-center gap-2">
                                             <Phone size={14} className="text-emerald-600 shrink-0" />
                                             <span className="text-sm font-bold text-emerald-700">
-                                                {requestDetails?.requestedBy?.phoneNumber || currentMission.request?.requestedBy?.phoneNumber}
+                                                {displayPhone}
                                             </span>
                                         </div>
                                     )}
                                 </div>
-                                {(requestDetails?.requestedBy?.phoneNumber || currentMission.request?.requestedBy?.phoneNumber) && (
-                                    <a href={`tel:${requestDetails?.requestedBy?.phoneNumber || currentMission.request?.requestedBy?.phoneNumber}`} className="w-12 h-12 shrink-0 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200 transition-colors cursor-pointer self-center shadow-sm">
+                                {displayPhone && (
+                                    <a href={`tel:${displayPhone}`} className="w-12 h-12 shrink-0 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200 transition-colors cursor-pointer self-center shadow-sm">
                                         <Phone size={18} fill="currentColor" />
                                     </a>
                                 )}
@@ -344,7 +355,7 @@ export default function RescuerMapView({ currentMission, teamLocation }: Rescuer
                 </MapContainer>
 
                 {/* Float Button Đổi Lớp Bản Đồ */}
-                <div className="absolute bottom-6 right-6 z-[1000]">
+                <div className="absolute bottom-6 right-6 z-10">
                     <button
                         onClick={() => setLayerIndex((prev) => (prev + 1) % MAP_LAYERS.length)}
                         className="w-12 h-12 bg-white/90 backdrop-blur-xl rounded-full shadow-xl border border-slate-200 flex items-center justify-center text-slate-700 hover:text-orange-600 hover:scale-110 active:scale-95 transition-all duration-300"
