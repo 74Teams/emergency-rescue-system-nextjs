@@ -29,7 +29,8 @@ import type { RequestSummary } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
 
 const VIEW_TITLES: Record<DispatcherView, string> = {
-    requests: 'Yêu cầu cứu trợ',
+    'requests-list': 'Danh sách yêu cầu cứu trợ',
+    'requests-map': 'Bản đồ yêu cầu cứu trợ',
     missions: 'Nhiệm vụ',
     teams: 'Đội cứu hộ',
     analytics: 'Phân tích',
@@ -40,11 +41,11 @@ export default function DispatcherDashboard() {
     const router = useRouter()
     const pathname = usePathname()
 
-    const viewParam = searchParams?.get('view') as DispatcherView | null
+    const viewParam = searchParams?.get('view')
     const teamIdParam = searchParams?.get('teamId')
     const requestIdParam = searchParams?.get('requestId')
 
-    const [activeView, setActiveView] = useState<DispatcherView>('requests')
+    const [activeView, setActiveView] = useState<DispatcherView>('requests-map')
     const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
 
     const [statusFilter, setStatusFilter] = useState<string>('PENDING')
@@ -66,9 +67,14 @@ export default function DispatcherDashboard() {
     useEffect(() => {
         let shouldReplace = false
 
-        if (viewParam && VIEW_TITLES[viewParam as DispatcherView]) {
-            setActiveView(viewParam as DispatcherView)
-            shouldReplace = true
+        if (viewParam) {
+            if (viewParam === 'requests') {
+                setActiveView('requests-map')
+                shouldReplace = true
+            } else if (VIEW_TITLES[viewParam as DispatcherView]) {
+                setActiveView(viewParam as DispatcherView)
+                shouldReplace = true
+            }
         }
 
         if (teamIdParam) {
@@ -80,7 +86,7 @@ export default function DispatcherDashboard() {
             const matched = allRequests.find(r => r.id === requestIdParam)
             if (matched) {
                 setSelectedRequest(matched)
-                setActiveView('requests')
+                setActiveView('requests-map')
                 setStatusFilter('ALL')
                 shouldReplace = true
             }
@@ -131,7 +137,7 @@ export default function DispatcherDashboard() {
                     </p>
                 ),
                 timestamp: req.createdAt || new Date().toISOString(),
-                onClick: () => setActiveView('requests'),
+                onClick: () => setActiveView('requests-map'),
             })),
         ...recentMissionUpdates.map(mission => {
             const teamName =
@@ -241,7 +247,7 @@ export default function DispatcherDashboard() {
 
                     {/* ACTIVE VIEW CONTENT */}
                     <div className={cn("flex-1 min-h-0", activeView === 'analytics' ? "mt-0" : "mt-0")}>
-                        {activeView === 'requests' && (
+                        {(activeView === 'requests-list' || activeView === 'requests-map') && (
                             <RequestsTable
                                 requests={filteredRequests}
                                 allRequests={allRequests}
@@ -251,6 +257,7 @@ export default function DispatcherDashboard() {
                                 selectedRequest={selectedRequest}
                                 onSelectRequest={setSelectedRequest}
                                 missions={missions}
+                                viewMode={activeView === 'requests-list' ? 'list' : 'map'}
                             />
                         )}
 

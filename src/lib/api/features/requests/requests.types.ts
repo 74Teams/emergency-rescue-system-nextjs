@@ -14,6 +14,7 @@ export interface RequestOwnerSummary {
   fullName: string;
   phoneNumber?: string;
   email?: string;
+  userName?: string;
 }
 
 export interface RequestLocationSummary {

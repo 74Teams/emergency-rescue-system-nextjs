@@ -28,6 +28,21 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { UserAccountMenu } from '@/components/shared/UserAccountMenu'
 
+const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        {...props}
+    >
+        <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+        <path d="M9 18c-4.51 2-5-2-7-2" />
+    </svg>
+)
+
 export default function LandingPage() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [copied, setCopied] = useState(false)
@@ -738,55 +753,86 @@ export default function LandingPage() {
             </section>
 
             {/* ── FOOTER SECTION ── */}
-            <footer className="bg-slate-900 py-10 text-slate-400 text-xs border-t border-slate-800">
-                <div className="mx-auto max-w-7xl px-6 md:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <footer className="bg-slate-950 py-12 text-slate-400 text-xs border-t border-slate-800/80 relative overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+                
+                <div className="mx-auto max-w-7xl px-6 md:px-8 grid gap-10 md:grid-cols-12">
+                    {/* Left Column: Logo & Acknowledgement */}
                     <div
-                        className="flex flex-col items-center md:items-start gap-1.5"
+                        className="md:col-span-6 flex flex-col gap-4 text-center md:text-left"
                         data-aos="fade-up"
                     >
-                        <div className="flex items-center gap-2">
-                            <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
-                                <LifeBuoy className="size-4 stroke-[2.2]" />
+                        <div className="flex items-center justify-center md:justify-start gap-2.5">
+                            <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-600/10">
+                                <LifeBuoy className="size-4.5 stroke-[2.2]" />
                             </div>
-                            <span className="text-sm font-black text-white tracking-wider">
-                                RescueSystem
+                            <span className="text-[15px] font-black text-white tracking-wider leading-none">
+                                Rescue<span className="text-emerald-500">System</span>
                             </span>
                         </div>
-                        <p className="text-slate-505 text-center md:text-left font-medium">
-                            © {new Date().getFullYear()} Rescue System. Đồ án
-                            Công nghệ phần mềm
+                        <p className="text-slate-400 text-xs leading-relaxed max-w-md">
+                            Dự án nghiên cứu và xây dựng giải pháp số hóa điều phối cứu hộ, cứu nạn khẩn cấp. 
+                            Đặc biệt, nhóm xin gửi lời cảm ơn chân thành đến <strong className="text-slate-200 font-semibold">Thầy Mai Văn Hà</strong> đã hỗ trợ, định hướng và đồng hành cùng nhóm trong suốt quá trình hoàn thành đồ án.
+                        </p>
+                        <p className="text-slate-500 text-[11px] font-medium mt-1">
+                            © {new Date().getFullYear()} Rescue System. Đồ án Công nghệ phần mềm.
                         </p>
                     </div>
 
+                    {/* Middle Column: Quick Links */}
                     <div
-                        className="flex items-center gap-6 font-bold text-[10px] uppercase tracking-wider"
+                        className="md:col-span-3 flex flex-col items-center md:items-start gap-4"
                         data-aos="fade-up"
                         data-aos-delay="100"
                     >
-                        <Link
-                            href="/sos"
-                            className="hover:text-emerald-400 transition-colors"
-                        >
-                            SOS
-                        </Link>
-                        <Link
-                            href="/map"
-                            className="hover:text-emerald-400 transition-colors"
-                        >
-                            Bản đồ
-                        </Link>
-                        <Link
-                            href="/login"
-                            className="hover:text-emerald-400 transition-colors"
-                        >
-                            Đăng nhập
-                        </Link>
-                        <Link
-                            href="/register"
-                            className="hover:text-emerald-400 transition-colors"
-                        >
-                            Đăng ký
-                        </Link>
+                        <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Hệ thống</h4>
+                        <div className="flex flex-col items-center md:items-start gap-2.5 font-bold text-[11px] uppercase tracking-wider text-slate-400">
+                            <Link href="/sos" className="hover:text-emerald-400 transition-colors">
+                                SOS khẩn cấp
+                            </Link>
+                            <Link href="/map" className="hover:text-emerald-400 transition-colors">
+                                Bản đồ cứu trợ
+                            </Link>
+                            <Link href="/login" className="hover:text-emerald-400 transition-colors">
+                                Đăng nhập
+                            </Link>
+                            <Link href="/register" className="hover:text-emerald-400 transition-colors">
+                                Đăng ký thành viên
+                            </Link>
+                        </div>
+                    </div>
+
+                    {/* Right Column: Source Code Links */}
+                    <div
+                        className="md:col-span-3 flex flex-col items-center md:items-start gap-4"
+                        data-aos="fade-up"
+                        data-aos-delay="150"
+                    >
+                        <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Mã nguồn Github</h4>
+                        <div className="flex flex-col items-center md:items-start gap-3">
+                            <a
+                                href="https://github.com/74Teams/emergency-rescue-system-nextjs"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-2.5 text-slate-400 hover:text-white transition-colors group"
+                            >
+                                <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 group-hover:border-slate-700 transition-colors">
+                                    <GithubIcon className="size-4 text-slate-300 group-hover:text-white" />
+                                </div>
+                                <span className="font-bold text-[11px] uppercase tracking-wider">Next.js Frontend</span>
+                            </a>
+                            <a
+                                href="https://github.com/74Teams/emergency-rescue-system-backend"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-2.5 text-slate-400 hover:text-white transition-colors group"
+                            >
+                                <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 group-hover:border-slate-700 transition-colors">
+                                    <GithubIcon className="size-4 text-slate-300 group-hover:text-white" />
+                                </div>
+                                <span className="font-bold text-[11px] uppercase tracking-wider">.NET 10 Backend</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </footer>

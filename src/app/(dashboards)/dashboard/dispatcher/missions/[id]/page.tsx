@@ -599,98 +599,17 @@ export default function MissionDetailPage({
 
                             {/* Operations Control buttons */}
                             {!isFinishedOrAborted ? (
-                                <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-3">
-                                    <div className="flex-1 min-w-[200px] flex items-center gap-2">
-                                        <span className="text-xs font-bold text-slate-500 whitespace-nowrap">
-                                            Chuyển trạng thái:
-                                        </span>
-                                        <div className="flex-1 flex gap-1">
-                                            {[
-                                                'ASSIGNED',
-                                                'EN_ROUTE',
-                                                'ON_SITE',
-                                                'IN_PROGRESS',
-                                            ].map(st => {
-                                                const isCurrent =
-                                                    mission.status === st
-                                                const canTransition =
-                                                    isValidTransition(
-                                                        mission.status,
-                                                        st
-                                                    )
-                                                return (
-                                                    <Button
-                                                        key={st}
-                                                        size="sm"
-                                                        variant={
-                                                            isCurrent
-                                                                ? 'default'
-                                                                : 'outline'
-                                                        }
-                                                        onClick={() =>
-                                                            handleUpdateStatus(
-                                                                st
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            updateStatusMutation.isPending ||
-                                                            isCurrent ||
-                                                            !canTransition
-                                                        }
-                                                        className={cn(
-                                                            'text-[10px] font-extrabold uppercase px-2.5 h-8 flex-1 transition-all',
-                                                            isCurrent &&
-                                                                'bg-blue-600 hover:bg-blue-700 text-white font-black',
-                                                            !isCurrent &&
-                                                                !canTransition &&
-                                                                'opacity-40 cursor-not-allowed hover:bg-transparent text-slate-400 border-slate-200'
-                                                        )}
-                                                        title={
-                                                            !isCurrent &&
-                                                            !canTransition
-                                                                ? `Không thể chuyển trạng thái từ ${dictStatus[mission.status]} sang ${dictStatus[st]} theo quy trình`
-                                                                : undefined
-                                                        }
-                                                    >
-                                                        {st === 'ASSIGNED'
-                                                            ? 'Giao'
-                                                            : st === 'EN_ROUTE'
-                                                              ? 'Đi'
-                                                              : st === 'ON_SITE'
-                                                                ? 'Đến'
-                                                                : 'Xử lý'}
-                                                    </Button>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-2 w-full md:w-auto">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() =>
-                                                setIsAbortDialogOpen(true)
-                                            }
-                                            className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold h-8 text-xs shrink-0 flex-1 md:flex-initial"
-                                        >
-                                            <XCircle className="w-3.5 h-3.5 mr-1" />{' '}
-                                            Hủy nhiệm vụ
-                                        </Button>
-                                        <Button
-                                            onClick={handleFinish}
-                                            disabled={
-                                                finishMissionMutation.isPending
-                                            }
-                                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-8 text-xs shrink-0 flex-1 md:flex-initial"
-                                        >
-                                            {finishMissionMutation.isPending ? (
-                                                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                                            ) : (
-                                                <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                                            )}
-                                            Hoàn thành
-                                        </Button>
-                                    </div>
+                                <div className="pt-2 border-t border-slate-100 flex justify-end">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            setIsAbortDialogOpen(true)
+                                        }
+                                        className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold h-9 text-xs px-4"
+                                    >
+                                        <XCircle className="w-3.5 h-3.5 mr-1.5" />{' '}
+                                        Hủy nhiệm vụ
+                                    </Button>
                                 </div>
                             ) : (
                                 <div className="pt-2 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-400 italic">
