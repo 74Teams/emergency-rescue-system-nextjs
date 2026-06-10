@@ -476,9 +476,8 @@ export default function LandingPage() {
                             <p className="text-slate-505 text-xs md:text-sm leading-relaxed font-medium">
                                 Rescue System là giải pháp thay thế các hình
                                 thức chỉ huy truyền thống bằng công nghệ số, hỗ
-                                trợ kết nối dữ liệu tin cậy thông qua WebSockets
-                                thời gian thực và giao diện tương tác bản đồ tối
-                                ưu.
+                                trợ kết nối dữ liệu tin cậy và giao diện tương
+                                tác bản đồ tối ưu.
                             </p>
                             <div className="flex gap-3 items-start border-t border-slate-100 pt-5 mt-2">
                                 <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100/50">
@@ -554,8 +553,8 @@ export default function LandingPage() {
                             Thành viên dự án
                         </h2>
                         <p className="text-slate-505 text-xs md:text-sm leading-relaxed max-w-lg mx-auto font-medium">
-                            Nhóm sinh viên chuyên ngành Công nghệ phần mềm thiết
-                            kế và xây dựng giải pháp Rescue System.
+                            Nhóm sinh viên ngành Công nghệ thông tin Trường đại
+                            học Bách Khoa - Đại học Đà Nẵng
                         </p>
                     </div>
 
@@ -755,7 +754,7 @@ export default function LandingPage() {
             {/* ── FOOTER SECTION ── */}
             <footer className="bg-slate-950 py-12 text-slate-400 text-xs border-t border-slate-800/80 relative overflow-hidden">
                 <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
-                
+
                 <div className="mx-auto max-w-7xl px-6 md:px-8 grid gap-10 md:grid-cols-12">
                     {/* Left Column: Logo & Acknowledgement */}
                     <div
@@ -767,15 +766,23 @@ export default function LandingPage() {
                                 <LifeBuoy className="size-4.5 stroke-[2.2]" />
                             </div>
                             <span className="text-[15px] font-black text-white tracking-wider leading-none">
-                                Rescue<span className="text-emerald-500">System</span>
+                                Rescue
+                                <span className="text-emerald-500">System</span>
                             </span>
                         </div>
                         <p className="text-slate-400 text-xs leading-relaxed max-w-md">
-                            Dự án nghiên cứu và xây dựng giải pháp số hóa điều phối cứu hộ, cứu nạn khẩn cấp. 
-                            Đặc biệt, nhóm xin gửi lời cảm ơn chân thành đến <strong className="text-slate-200 font-semibold">Thầy Mai Văn Hà</strong> đã hỗ trợ, định hướng và đồng hành cùng nhóm trong suốt quá trình hoàn thành đồ án.
+                            Dự án nghiên cứu và xây dựng giải pháp số hóa điều
+                            phối cứu hộ, cứu nạn khẩn cấp. Đặc biệt, nhóm xin
+                            gửi lời cảm ơn chân thành đến{' '}
+                            <strong className="text-slate-200 font-semibold">
+                                Thầy Mai Văn Hà
+                            </strong>{' '}
+                            đã hỗ trợ, định hướng và đồng hành cùng nhóm trong
+                            suốt quá trình hoàn thành đồ án.
                         </p>
                         <p className="text-slate-500 text-[11px] font-medium mt-1">
-                            © {new Date().getFullYear()} Rescue System. Đồ án Công nghệ phần mềm.
+                            © {new Date().getFullYear()} Rescue System. Đồ án
+                            Công nghệ phần mềm.
                         </p>
                     </div>
 
@@ -785,18 +792,32 @@ export default function LandingPage() {
                         data-aos="fade-up"
                         data-aos-delay="100"
                     >
-                        <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Hệ thống</h4>
+                        <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">
+                            Hệ thống
+                        </h4>
                         <div className="flex flex-col items-center md:items-start gap-2.5 font-bold text-[11px] uppercase tracking-wider text-slate-400">
-                            <Link href="/sos" className="hover:text-emerald-400 transition-colors">
+                            <Link
+                                href="/sos"
+                                className="hover:text-emerald-400 transition-colors"
+                            >
                                 SOS khẩn cấp
                             </Link>
-                            <Link href="/map" className="hover:text-emerald-400 transition-colors">
+                            <Link
+                                href="/map"
+                                className="hover:text-emerald-400 transition-colors"
+                            >
                                 Bản đồ cứu trợ
                             </Link>
-                            <Link href="/login" className="hover:text-emerald-400 transition-colors">
+                            <Link
+                                href="/login"
+                                className="hover:text-emerald-400 transition-colors"
+                            >
                                 Đăng nhập
                             </Link>
-                            <Link href="/register" className="hover:text-emerald-400 transition-colors">
+                            <Link
+                                href="/register"
+                                className="hover:text-emerald-400 transition-colors"
+                            >
                                 Đăng ký thành viên
                             </Link>
                         </div>
@@ -808,7 +829,9 @@ export default function LandingPage() {
                         data-aos="fade-up"
                         data-aos-delay="150"
                     >
-                        <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Mã nguồn Github</h4>
+                        <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">
+                            Mã nguồn Github
+                        </h4>
                         <div className="flex flex-col items-center md:items-start gap-3">
                             <a
                                 href="https://github.com/74Teams/emergency-rescue-system-nextjs"
@@ -819,7 +842,9 @@ export default function LandingPage() {
                                 <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 group-hover:border-slate-700 transition-colors">
                                     <GithubIcon className="size-4 text-slate-300 group-hover:text-white" />
                                 </div>
-                                <span className="font-bold text-[11px] uppercase tracking-wider">Next.js Frontend</span>
+                                <span className="font-bold text-[11px] uppercase tracking-wider">
+                                    Next.js Frontend
+                                </span>
                             </a>
                             <a
                                 href="https://github.com/74Teams/emergency-rescue-system-backend"
@@ -830,7 +855,9 @@ export default function LandingPage() {
                                 <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 group-hover:border-slate-700 transition-colors">
                                     <GithubIcon className="size-4 text-slate-300 group-hover:text-white" />
                                 </div>
-                                <span className="font-bold text-[11px] uppercase tracking-wider">.NET 10 Backend</span>
+                                <span className="font-bold text-[11px] uppercase tracking-wider">
+                                    .NET 10 Backend
+                                </span>
                             </a>
                         </div>
                     </div>
