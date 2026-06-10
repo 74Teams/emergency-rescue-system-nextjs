@@ -606,7 +606,7 @@ export default function LandingPage() {
                                 <CardContent className="p-6 flex flex-col gap-5 flex-1 justify-between">
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-4">
-                                            <div className="relative size-12 rounded-xl overflow-hidden border border-slate-200/50 bg-slate-100 shadow-2xs shrink-0">
+                                            <div className="relative size-16 rounded-xl overflow-hidden border border-slate-200/50 bg-slate-100 shadow-2xs shrink-0">
                                                 <Image
                                                     src={m.image}
                                                     alt={m.name}
